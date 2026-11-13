@@ -6,9 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-# Inside Docker the site calls the API through nginx at the same origin (/api)
-ARG VITE_API_URL=/api
-ENV VITE_API_URL=${VITE_API_URL}
+# The app always calls the API at /api on its own address; nginx forwards it (see nginx.conf).
 RUN npm run build
 
 # ---- Runtime stage: unprivileged nginx serves the static files ----

@@ -10,8 +10,13 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:5173>. The page shows whether the backend
-([Talent-Pilot-Backend](https://github.com/samiremon/Talent-Pilot-Backend)) is online.
+Open <http://localhost:5173> and sign in with the recruiter account from the backend's `.env`
+(default `recruiter@example.com` / `change-me-recruiter`).
+
+The backend ([Talent-Pilot-Backend](https://github.com/samiremon/Talent-Pilot-Backend)) must be running.
+The dev server forwards every `/api/*` request to it (`VITE_PROXY_TARGET`, default `http://localhost:4000`),
+so the browser only ever talks to one address and the login cookie works without CORS setup.
+The login page shows a small dot telling you whether the server and database are reachable.
 
 ## Docker
 

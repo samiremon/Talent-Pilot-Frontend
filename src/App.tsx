@@ -1,22 +1,25 @@
-import { useBackendHealth, type BackendStatus } from './useBackendHealth';
-
-const statusLabel: Record<BackendStatus, string> = {
-  checking: 'Checking backend…',
-  online: 'Backend online',
-  offline: 'Backend offline',
-};
+/**
+ * Top of the app: decides which screen to show based on the login status.
+ *   loading     -> a short "Loading…" while we ask the backend who's logged in
+ *   signed-out  -> the login page
+ *   signed-in   -> the home page
+ */
+import { useAuth } from './auth/AuthContext';
+import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
 
 export function App() {
-  const status = useBackendHealth();
+  const { status } = useAuth();
 
-  return (
-    <main className="page">
-      <h1>TalentPilot</h1>
-      <p className="tagline">Your AI recruiting co-worker, from job description to hire.</p>
-      <p className={`status status--${status}`} role="status">
-        <span className="dot" aria-hidden="true" />
-        {statusLabel[status]}
-      </p>
-    </main>
-  );
+  if (status === 'loading') {
+    return (
+      <main className="page">
+        <p className="muted" role="status">
+          Loading…
+        </p>
+      </main>
+    );
+  }
+
+  return status === 'signed-in' ? <HomePage /> : <LoginPage />;
 }
