@@ -11,7 +11,8 @@ npm run dev
 ```
 
 Open <http://localhost:5173> and sign in with the recruiter account from the backend's `.env`
-(default `recruiter@example.com` / `change-me-recruiter`).
+(default `recruiter@example.com` / `change-me-recruiter`), or click **Use demo account** to fill them in.
+The button only appears when the backend has `DEMO_LOGIN_ENABLED=true`.
 
 The backend ([Talent-Pilot-Backend](https://github.com/samiremon/Talent-Pilot-Backend)) must be running.
 The dev server forwards every `/api/*` request to it (`VITE_PROXY_TARGET`, default `http://localhost:4000`),
