@@ -4,6 +4,7 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <DeleteAllCandidatesCard> red card: "Delete all 33 candidates of JOB-0003?" (the job stays)
  *   <ScoreAgainCard>   "Score 22 unscored candidates in JOB-0002 again?" Confirm -> live progress
  *                    -> the AI posts the result
  *   <FindCandidatesCard> "Find candidates for JOB-0003": sites + search words (editable),
@@ -582,6 +583,50 @@ export function ScoreAgainCard({
               </Link>
             </>
           )
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Red card: "Delete all 33 candidates of JOB-0003?" Same function as the "Delete all" button. */
+export function DeleteAllCandidatesCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as { jobId: string; jobCode?: string; title?: string; count?: number };
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const n = payload.count ?? 0;
+
+  return (
+    <section className={`job-card job-card--danger job-card--${card.status}`} aria-label="Proposed removal of all candidates">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <Trash2 size={16} aria-hidden="true" /> Delete all candidates
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          {pending ? 'Delete' : card.status === 'confirmed' ? 'Deleted' : 'Kept'} all{' '}
+          <strong>
+            {n} candidate{n === 1 ? '' : 's'}
+          </strong>{' '}
+          of {payload.jobCode} {payload.title}
+          {pending && '? The job itself stays. This can\'t be undone.'}
+        </p>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending && (
+          <div className="job-card__actions">
+            <button type="button" className="button button--danger" onClick={() => decide('confirm')} disabled={busy !== null}>
+              <Trash2 size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Deleting…' : 'Delete all'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Keep
+            </button>
+          </div>
         )}
       </div>
     </section>

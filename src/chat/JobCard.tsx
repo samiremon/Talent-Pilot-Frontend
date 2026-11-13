@@ -19,7 +19,7 @@ import type { Job } from '../types';
 
 export interface ActionCard {
   id: string;
-  type: 'create_job' | 'update_job' | 'delete_job' | 'import_csv' | 'add_candidate' | 'delete_candidate' | 'find_candidates' | 'score_candidates';
+  type: 'create_job' | 'update_job' | 'delete_job' | 'import_csv' | 'add_candidate' | 'delete_candidate' | 'find_candidates' | 'score_candidates' | 'delete_all_candidates';
   status: 'pending' | 'confirmed' | 'cancelled';
   payload: Record<string, unknown>;
   notes: string[];
