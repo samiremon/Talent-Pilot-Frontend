@@ -20,6 +20,7 @@ import { orUnknown, profileSite, timeAgo } from '../format';
 import type { Candidate, CandidateStatus } from '../types';
 import { ALLOWED_MOVES, STATUS_LABELS } from '../pipeline';
 import { ScoreBadge, StatusChip } from './DataParts';
+import { CandidateTimeline } from './CandidateTimeline';
 
 /** "summary: a\nskills: b" -> [{ label: 'Summary', text: 'a' }, { label: 'Skills', text: 'b' }] */
 export function splitProfileText(text: string | null): { label: string; text: string }[] {
@@ -216,6 +217,11 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
                 )}
               </>
             )}
+          </section>
+
+          <section className="details-section">
+            <h3>Timeline</h3>
+            <CandidateTimeline jobId={candidate.jobId} candidateId={candidate.id} />
           </section>
 
           {sections.length === 0 ? (

@@ -594,3 +594,20 @@ a.table__title:hover { color: var(--accent-text); }
 .candidate-col { min-width: 230px; }
 .candidate-contact a { display: inline-flex; align-items: center; gap: 3px; }
 .candidate-email { overflow-wrap: break-word; word-break: normal; }
+
+/* Candidate timeline (in the popup): the status path, then events on a vertical line. */
+.timeline { display: grid; gap: 12px; }
+.timeline__path { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.timeline__step { display: inline-flex; align-items: center; gap: 6px; }
+.timeline__step span { padding: 2px 10px; border-radius: 999px; font-size: 13px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); }
+.timeline__step--now span { background: var(--accent-weak); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+.timeline__arrow { color: var(--muted); }
+.timeline__events { list-style: none; margin: 0; padding: 0 0 0 4px; border-left: 2px solid var(--border); display: grid; gap: 10px; }
+.timeline__event { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 8px; padding-left: 14px; font-size: 14px; }
+.timeline__dot { position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); }
+.timeline__event--status .timeline__dot { border-color: var(--accent); background: var(--accent); }
+.timeline__event--email .timeline__dot { border-color: var(--ok); background: var(--ok); }
+.timeline__event--upcoming .timeline__dot { border-style: dashed; }
+.timeline__event--upcoming .timeline__text { color: var(--muted); }
+.timeline__event--undone .timeline__text { text-decoration: line-through; color: var(--muted); }
+.timeline__time { white-space: nowrap; }
