@@ -135,6 +135,12 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
             </div>
           )}
 
+          {/* Timeline first: where this person is in the process, and how they got there. */}
+          <section className="details-section details-section--timeline">
+            <h3>Timeline</h3>
+            <CandidateTimeline jobId={candidate.jobId} candidateId={candidate.id} />
+          </section>
+
           <dl className="details-grid">
             {rankedCount !== undefined && (
               <div className="details-grid__item">
@@ -217,11 +223,6 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
                 )}
               </>
             )}
-          </section>
-
-          <section className="details-section">
-            <h3>Timeline</h3>
-            <CandidateTimeline jobId={candidate.jobId} candidateId={candidate.id} />
           </section>
 
           {sections.length === 0 ? (

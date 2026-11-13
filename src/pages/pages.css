@@ -611,3 +611,4 @@ a.table__title:hover { color: var(--accent-text); }
 .timeline__event--upcoming .timeline__text { color: var(--muted); }
 .timeline__event--undone .timeline__text { text-decoration: line-through; color: var(--muted); }
 .timeline__time { white-space: nowrap; }
+.details-section--timeline { margin-bottom: 16px; }
