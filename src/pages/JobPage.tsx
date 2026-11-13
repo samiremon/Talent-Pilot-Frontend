@@ -120,6 +120,9 @@ export function JobCandidatesTab() {
   // Filters: search by name, and "show only the top N by score" (0 = everyone).
   const [search, setSearch] = useState('');
   const [top, setTop] = useState(0);
+  // Email filter: everyone, only people whose email we have, or only those without one
+  // (web search results never include an email).
+  const [emailFilter, setEmailFilter] = useState<'all' | 'found' | 'missing'>('all');
   // Rank by score (#1 = best). Computed on ALL candidates, so filtering never changes ranks.
   const ranks = useMemo(() => rankCandidates(candidates), [candidates]);
   const scoredCount = ranks.size;
@@ -132,8 +135,11 @@ export function JobCandidatesTab() {
       const rank = ranks.get(c.id);
       if (rank === undefined || rank > top) return false;
     }
+    if (emailFilter === 'found' && !c.email) return false;
+    if (emailFilter === 'missing' && c.email) return false;
     return !query || c.name.toLowerCase().includes(query);
   });
+  const withEmail = candidates.filter((c) => c.email).length;
 
   // Remove a candidate (trash button / popup), with a confirmation popup first.
   const deleteCandidate = useDeleteCandidate(job.id, { onDeleted: () => setSelected(null) });
@@ -179,6 +185,14 @@ export function JobCandidatesTab() {
               Top {n}
             </option>
           ))}
+        </select>
+      </label>
+      <label className="table-filters__top">
+        Email
+        <select value={emailFilter} onChange={(e) => setEmailFilter(e.target.value as typeof emailFilter)} aria-label="Filter by email">
+          <option value="all">All</option>
+          <option value="found">Found ({withEmail})</option>
+          <option value="missing">Missing ({candidates.length - withEmail})</option>
         </select>
       </label>
       <span className="muted small table-filters__count">
@@ -227,7 +241,13 @@ export function JobCandidatesTab() {
           {shown.length === 0 && (
             <tr>
               <td colSpan={7} className="muted table__empty">
-                {query ? `No candidate named "${search.trim()}"${top ? ` in the top ${top}` : ''}.` : 'No scored candidates yet.'}
+                {query
+                  ? `No candidate named "${search.trim()}"${top ? ` in the top ${top}` : ''}${emailFilter !== 'all' ? ` with the email filter on` : ''}.`
+                  : emailFilter === 'found'
+                    ? 'No candidates with an email found.'
+                    : emailFilter === 'missing'
+                      ? 'Every candidate has an email.'
+                      : 'No scored candidates yet.'}
               </td>
             </tr>
           )}
