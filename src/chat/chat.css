@@ -158,26 +158,53 @@
 .pill--muted { background: var(--surface-2); color: var(--muted); }
 .pill--bad { background: var(--bad-bg); color: var(--bad); }
 
-/* ---------- Job card (proposed by the AI, confirmed by the recruiter) ---------- */
+/* ---------- Job card (proposed by the AI, confirmed by the recruiter) ----------
+ * Deliberately different from chat bubbles: a formal dark header strip, a cool grey
+ * form body and square-ish corners, so "fill in / approve this" stands out from talk.
+ */
+
+:root {
+  --card-head: #1e293b;       /* slate-800: formal, matches the top bar family */
+  --card-head-text: #f1f5f9;
+  --card-body: #f8fafc;       /* cool grey form background */
+  --card-edge: #94a3b8;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --card-head: #0f172a; --card-head-text: #e2e8f0; --card-body: #131a26; --card-edge: #475569; }
+}
 
 .job-card {
-  display: grid; gap: 10px; min-width: 0;
-  padding: 12px;
-  border: 1px solid var(--border-strong); border-radius: 12px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  min-width: 0;
+  border: 1px solid var(--card-edge);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card-body);
+  box-shadow: var(--shadow-lg);
 }
-.job-card--pending { border-color: var(--accent); }
+.job-card--pending { border-left: 4px solid var(--warn); }
+.job-card--confirmed { border-left: 4px solid var(--ok); }
 .job-card--cancelled { opacity: 0.7; }
-.job-card__header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+
+.job-card__header {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: var(--card-head); color: var(--card-head-text);
+}
+.job-card__title { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; letter-spacing: 0.02em; text-transform: uppercase; }
+.job-card__state { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+.job-card__state--pending { background: var(--warn-bg); color: var(--warn); }
+.job-card__state--confirmed { background: var(--ok-bg); color: var(--ok); }
+.job-card__state--cancelled { background: rgba(148, 163, 184, 0.25); color: var(--card-head-text); }
+
+.job-card__body { display: grid; gap: 10px; padding: 12px; }
 .job-card__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .job-card__field { display: grid; gap: 3px; font-size: 12px; }
-.job-card__field > span:first-child { color: var(--muted); font-weight: 600; }
+.job-card__field > span:first-child { color: var(--text-2); font-weight: 600; }
 .job-card__field input, .job-card__field select {
   width: 100%; min-width: 0; /* stay inside the card's grid column */
   padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); font-size: 13px;
 }
-.job-card__field input:disabled, .job-card__field select:disabled { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.job-card__field input:disabled, .job-card__field select:disabled { background: transparent; color: var(--text); border-color: var(--border); }
 .job-card__field .tag-input { min-height: 34px; padding: 3px 6px; }
 .job-card__field .tag-input__field { border: 0; padding: 2px; min-width: 80px; background: transparent; outline: none; font-size: 13px; }
 .job-card__tags { font-size: 13px; }

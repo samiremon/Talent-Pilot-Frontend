@@ -11,11 +11,13 @@
  * This component loads the job and its candidates ONCE and hands them to whichever tab
  * is open (through react-router's "outlet context"), so switching tabs is instant.
  */
-import { ExternalLink, History, Inbox, Mail, Users } from 'lucide-react';
+import { History, Inbox, Info, Mail, Users } from 'lucide-react';
+import { useState } from 'react';
 import { NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
+import { JobDetailsDialog } from '../components/JobDetailsDialog';
 import { EmptyState, PageHeader } from '../components/PageParts';
-import { orUnknown, remoteLabel, tokenDetail, tokens } from '../format';
+import { orUnknown } from '../format';
 import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
 import type { ActivityItem, Candidate, Job } from '../types';
 import { useApi } from '../useApi';
@@ -37,6 +39,9 @@ interface JobContext {
 export function JobPage() {
   const { jobId = '' } = useParams();
   const jobRequest = useApi<{ job: Job }>(`/jobs/${jobId}`);
+  // "Job details" panel open? (Declared before the early return below: React's rule that
+  // hooks always run in the same order.)
+  const [showDetails, setShowDetails] = useState(false);
   const candidatesRequest = useApi<{ candidates: Candidate[] }>(`/jobs/${jobId}/candidates`);
 
   const job = jobRequest.data?.job;
@@ -48,37 +53,17 @@ export function JobPage() {
 
   return (
     <>
-      <PageHeader title={job.title} subtitle={job.company ?? undefined} />
-
-      {/* The key facts as chips. Missing ones say "Unknown" instead of being guessed. */}
-      <div className="facts">
-        <span className="fact">{orUnknown(job.seniority)}</span>
-        <span className="fact">
-          {orUnknown(job.location)} · {remoteLabel(job.remotePolicy)}
-        </span>
-        <span className="fact">Salary: {orUnknown(job.salary)}</span>
-        {/* Token meter: hover for the in/out split. */}
-        <span className="fact" title={tokenDetail(job.aiUsage)}>
-          AI usage: {tokens(job.aiUsage.inputTokens + job.aiUsage.outputTokens)} tokens
-        </span>
-        {job.sourceUrl && (
-          <a className="fact" href={job.sourceUrl} target="_blank" rel="noreferrer noopener">
-            Original posting <ExternalLink size={12} aria-hidden="true" />
-          </a>
-        )}
-      </div>
-      <div className="skills">
-        {job.mustHaveSkills.map((skill) => (
-          <span key={skill} className="skill skill--must" title="Must-have">
-            {skill}
-          </span>
-        ))}
-        {job.niceToHaveSkills.map((skill) => (
-          <span key={skill} className="skill" title="Nice to have">
-            {skill}
-          </span>
-        ))}
-      </div>
+      {/* Kept short on purpose: all the job's fields are one click away in "Job details". */}
+      <PageHeader
+        title={job.title}
+        subtitle={job.company ?? undefined}
+        actions={
+          <button type="button" className="button button--ghost" onClick={() => setShowDetails(true)}>
+            <Info size={16} aria-hidden="true" /> Job details
+          </button>
+        }
+      />
+      <JobDetailsDialog job={job} open={showDetails} onClose={() => setShowDetails(false)} />
 
       <nav className="tabs" aria-label="Job sections">
         {TABS.map((tab) => (

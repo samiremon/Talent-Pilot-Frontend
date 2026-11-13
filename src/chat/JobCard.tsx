@@ -5,8 +5,12 @@
  * fields (with the recruiter's edits) to POST /api/chat/actions/:id/confirm, which creates
  * the job with the same code as the New job form. Cancel drops it.
  * After that the card shows the result ("Created → Open job" / "Cancelled").
+ *
+ * Look: cards are deliberately NOT chat bubbles. They have a dark "form" header strip,
+ * a cool grey body and a "Needs your input" label, so the recruiter can tell at a glance
+ * "this is something I fill in / approve" vs "this is the AI talking".
  */
-import { Check, X } from 'lucide-react';
+import { Check, ClipboardList, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
@@ -94,11 +98,15 @@ export function JobCard({ card, onDecided }: { card: ActionCard; onDecided: (res
   return (
     <section className={`job-card job-card--${card.status}`} aria-label="Proposed job">
       <header className="job-card__header">
-        <span>New job</span>
-        <span className={`pill ${pending ? 'pill--warn' : card.status === 'confirmed' ? 'pill--ok' : 'pill--muted'}`}>
-          {pending ? 'Waiting for you' : card.status === 'confirmed' ? 'Created' : 'Cancelled'}
+        <span className="job-card__title">
+          <ClipboardList size={16} aria-hidden="true" /> Job card
+        </span>
+        <span className={`job-card__state job-card__state--${card.status}`}>
+          {pending ? 'Needs your input' : card.status === 'confirmed' ? 'Created' : 'Cancelled'}
         </span>
       </header>
+
+      <div className="job-card__body">
 
       <div className="job-card__grid">
         {input('title', 'Title')}
@@ -172,6 +180,7 @@ export function JobCard({ card, onDecided }: { card: ActionCard; onDecided: (res
           </Link>
         )
       )}
+      </div>
     </section>
   );
 }

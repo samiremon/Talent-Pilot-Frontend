@@ -1,8 +1,9 @@
 /**
- * Jobs list, from GET /api/jobs. Each row links to the job's page.
+ * Jobs list, from GET /api/jobs.
+ * The WHOLE row opens the job (click anywhere on it, or Tab to it and press Enter).
  */
 import { Briefcase, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LoadState } from '../components/DataParts';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown, remoteLabel, timeAgo, tokenDetail, tokens } from '../format';
@@ -11,6 +12,7 @@ import { useApi } from '../useApi';
 
 export function JobsPage() {
   const { data, error, loading } = useApi<{ jobs: Job[] }>('/jobs');
+  const navigate = useNavigate();
 
   return (
     <>
@@ -51,7 +53,17 @@ export function JobsPage() {
             </thead>
             <tbody>
               {data.jobs.map((job) => (
-                <tr key={job.id}>
+                <tr
+                  key={job.id}
+                  className="row-link"
+                  // Keyboard users can Tab to the row and press Enter, like a link.
+                  tabIndex={0}
+                  aria-label={`Open ${job.title}`}
+                  onClick={() => navigate(`/jobs/${job.id}`)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') navigate(`/jobs/${job.id}`);
+                  }}
+                >
                   <td>
                     <Link to={`/jobs/${job.id}`} className="table__title">
                       {job.title}
