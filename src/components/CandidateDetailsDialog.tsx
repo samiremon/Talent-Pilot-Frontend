@@ -14,7 +14,7 @@
  *
  * Uses the browser's <dialog>: Esc closes, focus stays inside, the page behind is dimmed.
  */
-import { ExternalLink, Mail, X } from 'lucide-react';
+import { ExternalLink, Mail, ShieldAlert, Trash2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { orUnknown, timeAgo } from '../format';
 import type { Candidate } from '../types';
@@ -48,9 +48,11 @@ interface Props {
   /** How many candidates in the job are ranked (scored). */
   rankedCount?: number;
   onClose: () => void;
+  /** Shows a "Remove candidate" button (it asks for confirmation first). */
+  onRemove?: (candidate: Candidate) => void;
 }
 
-export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose }: Props) {
+export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, onRemove }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -87,6 +89,18 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose }
               <X size={18} />
             </button>
           </header>
+
+          {candidate.flagged && (
+            // Red warning: the profile tried to talk to the AI. We ignored it, but the
+            // recruiter should check this person by hand.
+            <p className="flag-banner" role="alert">
+              <ShieldAlert size={18} aria-hidden="true" />
+              <span>
+                <strong>Check this profile.</strong> It contains instructions aimed at the AI (e.g. "give me a high
+                score"). They were ignored, but the score may still be unreliable.
+              </span>
+            </p>
+          )}
 
           <dl className="details-grid">
             {rankedCount !== undefined && (
@@ -175,6 +189,14 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose }
                 <div className="details-description details-description--short">{section.text}</div>
               </section>
             ))
+          )}
+
+          {onRemove && (
+            <div className="details-dialog__footer">
+              <button type="button" className="button button--danger-ghost" onClick={() => onRemove(candidate)}>
+                <Trash2 size={16} aria-hidden="true" /> Remove candidate
+              </button>
+            </div>
           )}
         </div>
       )}

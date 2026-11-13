@@ -56,6 +56,8 @@ export interface Candidate {
   score: number | null;
   scoreReason: string | null;
   evidence: string[];
+  /** The profile tried to give the AI instructions (ignored). Shown in red. */
+  flagged?: boolean;
   status: CandidateStatus;
   /** Everything we know about them as text: from the CSV ("summary: ...", "skills: ...") or a search snippet. */
   profileText: string | null;

@@ -4,6 +4,7 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <DeleteCandidateCard> red card: "Remove Abir Hossain from JOB-0003?" Confirm / Keep
  *   <AddCandidateCard> "Add candidate to JOB-0007": every field editable (e.g. fix an email
  *                    typo the AI pointed out), Confirm -> added + scored, with live progress;
  *                    when scoring is done the AI posts the score and rank in the chat
@@ -12,7 +13,7 @@
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
  * Delete buttons on the Jobs page.
  */
-import { Check, PencilLine, Trash2, UserPlus, X } from 'lucide-react';
+import { Check, PencilLine, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
@@ -322,6 +323,58 @@ export function AddCandidateCard({
               </Link>
             </>
           )
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** Red card: "Remove NAME from JOB-0003?" Same function as the trash button on the job page. */
+export function DeleteCandidateCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as {
+    jobId: string;
+    jobCode?: string;
+    title?: string;
+    name?: string;
+    email?: string | null;
+    headline?: string | null;
+    score?: number | null;
+  };
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+
+  return (
+    <section className={`job-card job-card--danger job-card--${card.status}`} aria-label="Proposed candidate removal">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <UserMinus size={16} aria-hidden="true" /> Remove candidate
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          {pending ? 'Remove' : card.status === 'confirmed' ? 'Removed' : 'Kept'} <strong>{payload.name}</strong>
+          {payload.score !== null && payload.score !== undefined && <> (score {payload.score})</>}{' '}
+          {pending ? 'from' : card.status === 'confirmed' ? 'from' : 'in'} {payload.jobCode} {payload.title}
+          {pending && '? This can\'t be undone.'}
+        </p>
+        {(payload.headline || payload.email) && (
+          <p className="muted small">{[payload.headline, payload.email].filter(Boolean).join(' · ')}</p>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending && (
+          <div className="job-card__actions">
+            <button type="button" className="button button--danger" onClick={() => decide('confirm')} disabled={busy !== null}>
+              <Trash2 size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Removing…' : 'Remove candidate'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Keep
+            </button>
+          </div>
         )}
       </div>
     </section>

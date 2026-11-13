@@ -403,3 +403,42 @@ a.table__title:hover { color: var(--accent-text); }
   text-align: center;
   padding: 1.5rem;
 }
+
+/* Flagged candidate (profile tried to instruct the AI): the whole row/card is red. */
+/* Red tint over the normal surface, so the sticky trash cell isn't see-through in dark mode. */
+.row--flagged td,
+.table .row--flagged .row-actions { background: linear-gradient(var(--bad-bg), var(--bad-bg)), var(--surface); }
+.row--flagged td:first-child { box-shadow: inset 4px 0 0 var(--bad); }
+.row--flagged .table__title,
+.row--flagged td:nth-child(4) > div:first-child { color: var(--bad); font-weight: 600; }
+.row-link.row--flagged:hover td,
+.row-link.row--flagged:focus-visible td { background: linear-gradient(var(--bad-bg), var(--bad-bg)), var(--surface); filter: brightness(0.96); }
+.row-link.row--flagged:hover td:first-child,
+.row-link.row--flagged:focus-visible td:first-child { box-shadow: inset 4px 0 0 var(--bad); }
+.board__card--flagged { background: var(--bad-bg); border-color: var(--bad); box-shadow: inset 4px 0 0 var(--bad); }
+.board__card--flagged .board__name { color: var(--bad); }
+
+/* Red warning box at the top of a flagged candidate's popup. */
+.flag-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--bad);
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+.flag-banner svg { flex: none; margin-top: 2px; }
+
+/* "Remove candidate" at the bottom of the popup. */
+.details-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.button.button--danger-ghost { background: transparent; border-color: var(--bad); color: var(--bad); }
+.button.button--danger-ghost:hover:not(:disabled) { background: var(--bad-bg); }

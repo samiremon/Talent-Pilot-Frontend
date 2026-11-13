@@ -19,6 +19,7 @@ import { JobDetailsDialog } from '../components/JobDetailsDialog';
 import { CandidateDetailsDialog } from '../components/CandidateDetailsDialog';
 import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
+import { useDeleteCandidate } from '../components/useDeleteCandidate';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown } from '../format';
@@ -132,6 +133,9 @@ export function JobCandidatesTab() {
     return !query || c.name.toLowerCase().includes(query);
   });
 
+  // Remove a candidate (trash button / popup), with a confirmation popup first.
+  const deleteCandidate = useDeleteCandidate(job.id, { onDeleted: () => setSelected(null) });
+
   const bar = <SourcingBar jobId={job.id} latest={latestTask} />;
   if (candidates.length === 0) {
     return (
@@ -186,12 +190,15 @@ export function JobCandidatesTab() {
             <th scope="col">Candidate</th>
             <th scope="col">Why</th>
             <th scope="col">Status</th>
+            <th scope="col" className="row-actions">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
           {shown.length === 0 && (
             <tr>
-              <td colSpan={5} className="muted table__empty">
+              <td colSpan={6} className="muted table__empty">
                 {query ? `No candidate named "${search.trim()}"${top ? ` in the top ${top}` : ''}.` : 'No scored candidates yet.'}
               </td>
             </tr>
@@ -199,10 +206,11 @@ export function JobCandidatesTab() {
           {shown.map((c) => (
             <tr
               key={c.id}
-              className="row-link"
+              // Red row = their profile tried to instruct the AI (it was ignored, but look twice).
+              className={`row-link${c.flagged ? ' row--flagged' : ''}`}
               // The whole row opens the details popup (click, or Tab + Enter).
               tabIndex={0}
-              aria-label={`Show details for ${c.name}`}
+              aria-label={`Show details for ${c.name}${c.flagged ? ' (flagged: profile contains instructions aimed at the AI)' : ''}`}
               onClick={() => setSelected(c)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') setSelected(c);
@@ -241,6 +249,21 @@ export function JobCandidatesTab() {
               <td>
                 <StatusChip status={c.status} />
               </td>
+              <td className="row-actions">
+                <button
+                  type="button"
+                  className="icon-button icon-button--danger"
+                  aria-label={`Remove ${c.name}`}
+                  title="Remove candidate"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    deleteCandidate.ask(c);
+                  }}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -251,7 +274,9 @@ export function JobCandidatesTab() {
       rank={selected ? ranks.get(selected.id) : undefined}
       rankedCount={scoredCount}
       onClose={() => setSelected(null)}
+      onRemove={deleteCandidate.ask}
     />
+    {deleteCandidate.dialog}
     </>
   );
 }
@@ -277,7 +302,7 @@ export function JobPipelineTab() {
               inColumn.map((c) => (
                 <article
                   key={c.id}
-                  className="board__card board__card--link"
+                  className={`board__card board__card--link${c.flagged ? ' board__card--flagged' : ''}`}
                   role="button"
                   tabIndex={0}
                   aria-label={`Show details for ${c.name}`}
