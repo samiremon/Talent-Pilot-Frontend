@@ -28,7 +28,7 @@ interface ImportPayload {
 }
 
 /** Live scoring progress for the job, shown once the import is confirmed. */
-function LiveScoring({ jobId }: { jobId: string }) {
+export function LiveScoring({ jobId }: { jobId: string }) {
   const { latest } = useJobTasks(jobId);
   if (!latest) return <p className="job-card__hint">Starting AI scoring…</p>;
   const active = latest.status === 'queued' || latest.status === 'running';

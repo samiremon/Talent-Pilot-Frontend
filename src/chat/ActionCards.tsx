@@ -4,17 +4,20 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <AddCandidateCard> "Add candidate to JOB-0007": every field editable (e.g. fix an email
+ *                    typo the AI pointed out), Confirm -> added + scored, with live progress
  *
  * Both use the same card look as the job card (dark header = "needs your input") and call
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
  * Delete buttons on the Jobs page.
  */
-import { Check, PencilLine, Trash2, X } from 'lucide-react';
+import { Check, PencilLine, Trash2, UserPlus, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { remoteLabel } from '../format';
 import type { Job } from '../types';
+import { LiveScoring } from './ImportCsvCard';
 import type { ActionCard, DecisionResult } from './JobCard';
 
 const FIELD_LABELS: Record<string, string> = {
@@ -215,6 +218,99 @@ export function JobDeleteCard({ card, onDecided }: { card: ActionCard; onDecided
               <X size={16} aria-hidden="true" /> Keep it
             </button>
           </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+const CANDIDATE_FIELDS = [
+  { key: 'name', label: 'Name' },
+  { key: 'email', label: 'Email' },
+  { key: 'headline', label: 'Title' },
+  { key: 'location', label: 'Location' },
+  { key: 'profileUrl', label: 'Profile link' },
+] as const;
+
+export function AddCandidateCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as { jobId: string; jobCode?: string; title?: string; candidate: Record<string, string | null> };
+  const [values, setValues] = useState<Record<string, string>>(() => ({
+    name: payload.candidate.name ?? '',
+    email: payload.candidate.email ?? '',
+    headline: payload.candidate.headline ?? '',
+    location: payload.candidate.location ?? '',
+    profileUrl: payload.candidate.profileUrl ?? '',
+    profileText: payload.candidate.profileText ?? '',
+  }));
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const result = card.result as { taskId?: string | null } | null;
+  const set = (key: string, value: string) => setValues((v) => ({ ...v, [key]: value }));
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Proposed new candidate">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <UserPlus size={16} aria-hidden="true" /> Add candidate
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          → {payload.jobCode} {payload.title}
+        </p>
+        <div className="job-card__grid">
+          {CANDIDATE_FIELDS.map(({ key, label }) => (
+            <label key={key} className="job-card__field">
+              <span>{label}</span>
+              <input value={values[key]} onChange={(e) => set(key, e.target.value)} disabled={!pending} placeholder="Unknown" />
+            </label>
+          ))}
+        </div>
+        <label className="job-card__field">
+          <span>Experience &amp; skills (what the AI scores)</span>
+          <textarea
+            className="job-card__textarea"
+            rows={3}
+            value={values.profileText}
+            onChange={(e) => set('profileText', e.target.value)}
+            disabled={!pending}
+            placeholder="Unknown"
+          />
+        </label>
+        {card.notes.length > 0 && pending && (
+          <ul className="job-card__notes">
+            {card.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending ? (
+          <>
+            <div className="job-card__actions">
+              <button type="button" className="button" onClick={() => decide('confirm', values)} disabled={busy !== null || !values.name?.trim()}>
+                <Check size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Adding…' : 'Confirm: add & score'}
+              </button>
+              <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+                <X size={16} aria-hidden="true" /> Cancel
+              </button>
+            </div>
+            <p className="job-card__hint">Nothing is added until you press Confirm. You can fix any field first.</p>
+          </>
+        ) : (
+          card.status === 'confirmed' && (
+            <>
+              {result?.taskId && <LiveScoring jobId={payload.jobId} />}
+              <Link className="job-card__open" to={`/jobs/${payload.jobId}`}>
+                Open candidates →
+              </Link>
+            </>
+          )
         )}
       </div>
     </section>

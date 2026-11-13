@@ -252,3 +252,6 @@
 .import-counts dd { margin: 0; font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
 .import-counts--good dd { color: var(--ok); }
 .import-preview { margin: 0; padding-left: 16px; font-size: 12px; display: grid; gap: 2px; }
+
+.job-card__textarea { width: 100%; min-width: 0; padding: 6px 8px; font: inherit; font-size: 13px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); resize: vertical; }
+.job-card__textarea:disabled { background: transparent; border-color: var(--border); }

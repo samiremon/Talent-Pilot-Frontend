@@ -1,7 +1,9 @@
 /**
  * The bar above a job's candidates:
  *
- *   [ Upload CSV ]                                   (live) Scoring… 15 of 23  ▓▓▓▓░░
+ *   [ Upload CSV ] [ Add candidate ]                 (live) Scoring… 15 of 23  ▓▓▓▓░░
+ *
+ * - Add candidate: a small form for ONE person (same as asking the AI to add them).
  *
  * - Upload CSV: pick a .csv file -> candidates are added (duplicates skipped) and AI
  *   scoring starts in the background automatically. A short summary is shown.
@@ -9,10 +11,11 @@
  *
  * These call the same backend functions the AI will use from the chat.
  */
-import { FileUp } from 'lucide-react';
+import { FileUp, UserPlus } from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
 import { API_BASE, ApiError } from '../api';
 import type { JobTask } from '../useJobTasks';
+import { AddCandidateDialog } from './AddCandidateDialog';
 import { notifyDataChanged } from '../useApi';
 
 interface UploadResult {
@@ -26,6 +29,7 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<'upload' | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  const [adding, setAdding] = useState(false);
   const active = latest && (latest.status === 'queued' || latest.status === 'running');
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -63,7 +67,16 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
         <button type="button" className="button" onClick={() => fileRef.current?.click()} disabled={busy !== null}>
           <FileUp size={16} aria-hidden="true" /> {busy === 'upload' ? 'Uploading…' : 'Upload CSV'}
         </button>
+        <button type="button" className="button button--ghost" onClick={() => setAdding(true)} disabled={busy !== null}>
+          <UserPlus size={16} aria-hidden="true" /> Add candidate
+        </button>
       </div>
+      <AddCandidateDialog
+        jobId={jobId}
+        open={adding}
+        onClose={() => setAdding(false)}
+        onAdded={(text) => setNotice({ ok: true, text })}
+      />
 
       {latest && (
         <div className={`task-progress task-progress--${latest.status}`} role="status" aria-live="polite">

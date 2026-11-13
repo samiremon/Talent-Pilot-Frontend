@@ -348,3 +348,6 @@ a.table__title:hover { color: var(--accent-text); }
 .details-description--short { max-height: 200px; }
 .board__card--link { cursor: pointer; transition: border-color 0.12s, background-color 0.12s; }
 .board__card--link:hover, .board__card--link:focus-visible { border-color: var(--accent); background: var(--accent-weak); outline: none; }
+
+.details-dialog__header h2 { display: inline-flex; align-items: center; gap: 8px; }
+.link-button { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
