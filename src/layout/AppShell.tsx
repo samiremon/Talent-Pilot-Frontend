@@ -17,6 +17,12 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import './layout.css';
 
+/** The id of the job on screen (/jobs/<id>/...), so the chat can tell the AI. */
+function currentJobId(pathname: string): string | undefined {
+  const match = /^\/jobs\/([0-9a-f]{24})(?:\/|$)/.exec(pathname);
+  return match?.[1];
+}
+
 /** A short name for the page the recruiter is on, shown in the chat header. */
 function describePage(pathname: string): string {
   if (pathname.startsWith('/jobs/')) return 'A job';
@@ -68,6 +74,7 @@ export function AppShell() {
             if (modeRef.current === 'minimized') setUnread(true);
           }}
           context={describePage(pathname)}
+          jobId={currentJobId(pathname)}
         />
       </div>
 

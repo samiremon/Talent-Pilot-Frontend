@@ -10,9 +10,19 @@
  *   reload   ask again (e.g. after creating something)
  *
  * Changing `path` loads the new address. Leaving the page cancels the request.
+ *
+ * Pages also reload by themselves when something changes data elsewhere in the app
+ * (e.g. confirming a job card in the chat): call notifyDataChanged() after such a change.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError } from './api';
+
+const DATA_CHANGED = 'talentpilot:data-changed';
+
+/** Tell every page on screen that data changed, so they fetch fresh numbers. */
+export function notifyDataChanged(): void {
+  window.dispatchEvent(new Event(DATA_CHANGED));
+}
 
 export function useApi<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
@@ -40,5 +50,12 @@ export function useApi<T>(path: string) {
   }, [path, version]);
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+
+  // Reload when another part of the app says data changed.
+  useEffect(() => {
+    window.addEventListener(DATA_CHANGED, reload);
+    return () => window.removeEventListener(DATA_CHANGED, reload);
+  }, [reload]);
+
   return { data, error, loading, reload };
 }

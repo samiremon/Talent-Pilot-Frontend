@@ -60,14 +60,17 @@
 
 .message { display: flex; }
 .message--user { justify-content: flex-end; }
+/* Bubble + an optional card underneath it. */
+.message__content { display: grid; gap: 8px; max-width: 92%; }
+.message--user .message__content { justify-items: end; }
 .message__bubble {
-  max-width: 85%;
+  max-width: 100%;
   padding: 10px 12px;
   border-radius: 12px;
   white-space: pre-wrap; /* keep line breaks the user typed */
   overflow-wrap: anywhere;
 }
-.message--ai .message__bubble { background: var(--ai-bubble); border: 1px solid var(--ai-border); border-top-left-radius: 4px; }
+.message--assistant .message__bubble { background: var(--ai-bubble); border: 1px solid var(--ai-border); border-top-left-radius: 4px; }
 .message--user .message__bubble { background: var(--me-bubble); color: var(--me-text); border-top-right-radius: 4px; }
 
 /* ---------- Input area ---------- */
@@ -133,3 +136,52 @@
   .chat__expand { display: none; } /* already full screen */
   .chat-fab { right: 16px; bottom: 16px; }
 }
+
+/* Red bubble when sending failed (not saved). */
+.message--assistant .message__bubble--failed { background: var(--bad-bg); border-color: transparent; color: var(--bad); }
+
+/* AI text formatting (see RichText.tsx). */
+.rich p { margin: 0 0 6px; }
+.rich p:last-child { margin-bottom: 0; }
+.rich ul { margin: 4px 0 6px; padding-left: 18px; }
+.rich li { margin: 2px 0; }
+.message__bubble:has(.rich) { white-space: normal; }
+
+/* "Typing" dots while the AI thinks. */
+.message__typing { display: inline-flex; gap: 4px; align-items: center; padding: 12px 14px; }
+.message__typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: typing 1s infinite ease-in-out; }
+.message__typing span:nth-child(2) { animation-delay: 0.15s; }
+.message__typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing { 0%, 80%, 100% { opacity: 0.3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .message__typing span { animation: none; opacity: 0.6; } }
+
+.pill--muted { background: var(--surface-2); color: var(--muted); }
+.pill--bad { background: var(--bad-bg); color: var(--bad); }
+
+/* ---------- Job card (proposed by the AI, confirmed by the recruiter) ---------- */
+
+.job-card {
+  display: grid; gap: 10px; min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--border-strong); border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.job-card--pending { border-color: var(--accent); }
+.job-card--cancelled { opacity: 0.7; }
+.job-card__header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.job-card__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.job-card__field { display: grid; gap: 3px; font-size: 12px; }
+.job-card__field > span:first-child { color: var(--muted); font-weight: 600; }
+.job-card__field input, .job-card__field select {
+  width: 100%; min-width: 0; /* stay inside the card's grid column */
+  padding: 6px 8px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); font-size: 13px;
+}
+.job-card__field input:disabled, .job-card__field select:disabled { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.job-card__field .tag-input { min-height: 34px; padding: 3px 6px; }
+.job-card__field .tag-input__field { border: 0; padding: 2px; min-width: 80px; background: transparent; outline: none; font-size: 13px; }
+.job-card__tags { font-size: 13px; }
+.job-card__notes { margin: 0; padding-left: 16px; font-size: 12px; color: var(--warn); }
+.job-card__actions { display: flex; gap: 8px; }
+.job-card__hint { margin: 0; font-size: 11px; color: var(--muted); }
+.job-card__open { font-weight: 600; font-size: 13px; }
