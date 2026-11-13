@@ -1,0 +1,145 @@
+/*
+ * The app frame: top bar across the top, then a row of
+ *   [ sidebar | main page | AI chat panel ]
+ * filling the rest of the screen. Each column scrolls on its own.
+ */
+
+.app {
+  height: 100vh;
+  height: 100dvh; /* "dynamic" height: correct on phones where the address bar slides away */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  height: 56px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--top);
+  color: var(--top-text);
+  position: relative;
+  z-index: 40;
+}
+.topbar__brand {
+  display: flex; align-items: center; gap: 10px;
+  color: inherit; text-decoration: none;
+  font-weight: 600; font-size: 16px; letter-spacing: -0.01em;
+}
+.topbar__right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+
+/* Buttons on the dark bar need their own colors. */
+.topbar-button {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; min-width: 36px; padding: 0 8px;
+  border: 0; border-radius: 8px;
+  background: none; color: var(--top-text);
+  justify-content: center;
+}
+.topbar-button:hover { background: var(--top-hover); }
+.topbar__hamburger { display: none; }
+
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: #374151; color: #fff;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Account dropdown under the avatar. */
+.account-menu {
+  position: absolute; right: 16px; top: 52px;
+  min-width: 220px; padding: 6px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+}
+.account-menu__who { padding: 8px 10px 10px; border-bottom: 1px solid var(--border); margin-bottom: 4px; font-size: 13px; }
+.account-menu__who small { display: block; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.account-menu button {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 8px 10px;
+  border: 0; border-radius: 6px; background: none;
+  text-align: left; font-size: 13px;
+}
+.account-menu button:hover { background: var(--surface-2); }
+
+/* ---------- Body row ---------- */
+
+.shell {
+  flex: 1;
+  min-height: 0; /* lets the columns scroll instead of growing the page */
+  display: flex;
+  position: relative;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar {
+  width: 232px; flex: none;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 18px 12px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.sidebar__label {
+  padding: 4px 12px 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted);
+}
+.nav-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px; border-radius: 8px;
+  color: var(--text-2); font-weight: 500; text-decoration: none;
+}
+.nav-link:hover { background: var(--surface); }
+/* NavLink adds "active" to the link for the current page. */
+.nav-link.active { background: var(--accent-weak); color: var(--accent-text); }
+.sidebar__footer { margin-top: auto; padding: 12px; font-size: 12px; color: var(--muted); }
+
+/* ---------- Main page area ---------- */
+
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 28px 32px 48px;
+}
+/* When the chat is expanded to full width, the page is hidden behind it. */
+.shell--chat-expanded .main { display: none; }
+
+/* Dark see-through layer behind the mobile drawer; tapping it closes the drawer. */
+.backdrop { display: none; }
+
+/* ---------- Phones and small tablets ---------- */
+
+@media (max-width: 900px) {
+  .topbar__hamburger { display: inline-flex; }
+  .topbar__account-name { display: none; }
+
+  /* The sidebar becomes a drawer that slides in from the left. */
+  .sidebar {
+    position: fixed; top: 56px; bottom: 0; left: 0; z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar--open { transform: none; }
+  .backdrop--visible {
+    display: block;
+    position: fixed; inset: 56px 0 0 0; z-index: 20;
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  .main { padding: 20px 16px 96px; }
+  .shell--chat-expanded .main { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}

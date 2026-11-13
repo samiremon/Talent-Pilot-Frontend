@@ -19,6 +19,18 @@ The dev server forwards every `/api/*` request to it (`VITE_PROXY_TARGET`, defau
 so the browser only ever talks to one address and the login cookie works without CORS setup.
 The login page shows a small dot telling you whether the server and database are reachable.
 
+## Layout
+
+After signing in you get the app frame: a top bar, a sidebar (**Dashboard, Jobs, Candidates, Outreach**),
+the current page in the middle, and the **AI chat docked on the right**.
+
+- **–** minimizes the chat to a round bot button (bottom right); a red dot means the AI said something new.
+- **⤢** expands the chat to full width. Your choice is remembered after a refresh.
+- Each job has tabs: **Candidates · Pipeline** (kanban board) **· Replies** (inbox with AI-drafted answers) **· Emails · Activity**.
+- On phones the sidebar becomes a ☰ drawer and the chat opens full screen.
+
+The AI and the data are connected in later steps; until then pages show their empty states.
+
 ## Docker
 
 The full stack (website + API + database) is started from the backend repo:

@@ -8,6 +8,7 @@
  * Demo helper: if the backend has DEMO_LOGIN_ENABLED=true, a "Use demo account" button
  * appears and fills in the recruiter's email and password from the backend's .env.
  */
+import { Send } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth/AuthContext';
@@ -61,9 +62,12 @@ export function LoginPage() {
   }
 
   return (
-    <main className="page">
-      <section className="card" aria-labelledby="login-title">
-        <h1 id="login-title" className="brand">
+    <main className="auth-page">
+      <section className="card auth-card" aria-labelledby="login-title">
+        <span className="logo-tile auth-logo" aria-hidden="true">
+          <Send size={16} />
+        </span>
+        <h1 id="login-title" className="auth-title">
           TalentPilot
         </h1>
         <p className="tagline">Your AI recruiting co-worker, from job description to hire.</p>
