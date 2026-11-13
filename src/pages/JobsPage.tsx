@@ -5,7 +5,7 @@ import { Briefcase, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LoadState } from '../components/DataParts';
 import { EmptyState, PageHeader } from '../components/PageParts';
-import { money, orUnknown, remoteLabel, timeAgo } from '../format';
+import { orUnknown, remoteLabel, timeAgo, tokenDetail, tokens } from '../format';
 import type { Job } from '../types';
 import { useApi } from '../useApi';
 
@@ -45,7 +45,7 @@ export function JobsPage() {
                 <th scope="col">Candidates</th>
                 <th scope="col">Contacted</th>
                 <th scope="col">Hired</th>
-                <th scope="col">AI cost</th>
+                <th scope="col">AI tokens</th>
                 <th scope="col">Created</th>
               </tr>
             </thead>
@@ -64,7 +64,7 @@ export function JobsPage() {
                   <td>{job.totalCandidates}</td>
                   <td>{job.totalCandidates - job.counts.sourced - job.counts.accepted - job.counts.rejected}</td>
                   <td>{job.counts.hired}</td>
-                  <td>{money(job.aiUsage.costUsd)}</td>
+                  <td title={tokenDetail(job.aiUsage)}>{tokens(job.aiUsage.inputTokens + job.aiUsage.outputTokens)}</td>
                   <td className="muted">{timeAgo(job.createdAt)}</td>
                 </tr>
               ))}

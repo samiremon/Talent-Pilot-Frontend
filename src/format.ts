@@ -14,10 +14,17 @@ export function percent(value: number | null): string {
   return value === null ? '–' : `${Math.round(value * 100)}%`;
 }
 
-/** 0.0412 -> "$0.04". Tiny but non-zero amounts show as "<$0.01" rather than "$0.00". */
-export function money(usd: number): string {
-  if (usd > 0 && usd < 0.01) return '<$0.01';
-  return `$${usd.toFixed(2)}`;
+/** Token counts, short: 950 -> "950", 1540 -> "1.5k", 2_300_000 -> "2.3M". */
+export function tokens(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0)}k`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
+}
+
+/** "1.5k tokens (1.2k in · 300 out)": used in tooltips for the token meter. */
+export function tokenDetail(usage: { inputTokens: number; outputTokens: number }): string {
+  const total = usage.inputTokens + usage.outputTokens;
+  return `${tokens(total)} tokens (${tokens(usage.inputTokens)} in · ${tokens(usage.outputTokens)} out)`;
 }
 
 const REMOTE_LABELS = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'On-site', unknown: UNKNOWN } as const;

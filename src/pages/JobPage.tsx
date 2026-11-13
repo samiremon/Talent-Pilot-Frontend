@@ -15,7 +15,7 @@ import { ExternalLink, History, Inbox, Mail, Users } from 'lucide-react';
 import { NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
 import { EmptyState, PageHeader } from '../components/PageParts';
-import { money, orUnknown, remoteLabel } from '../format';
+import { orUnknown, remoteLabel, tokenDetail, tokens } from '../format';
 import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
 import type { ActivityItem, Candidate, Job } from '../types';
 import { useApi } from '../useApi';
@@ -57,7 +57,10 @@ export function JobPage() {
           {orUnknown(job.location)} · {remoteLabel(job.remotePolicy)}
         </span>
         <span className="fact">Salary: {orUnknown(job.salary)}</span>
-        <span className="fact">AI cost: {money(job.aiUsage.costUsd)}</span>
+        {/* Token meter: hover for the in/out split. */}
+        <span className="fact" title={tokenDetail(job.aiUsage)}>
+          AI usage: {tokens(job.aiUsage.inputTokens + job.aiUsage.outputTokens)} tokens
+        </span>
         {job.sourceUrl && (
           <a className="fact" href={job.sourceUrl} target="_blank" rel="noreferrer noopener">
             Original posting <ExternalLink size={12} aria-hidden="true" />

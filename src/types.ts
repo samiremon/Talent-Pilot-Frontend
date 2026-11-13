@@ -34,7 +34,8 @@ export interface Job {
   salary: string | null;
   remotePolicy: 'remote' | 'hybrid' | 'onsite' | 'unknown';
   status: 'active' | 'paused' | 'closed';
-  aiUsage: { inputTokens: number; outputTokens: number; costUsd: number };
+  /** Token meter: AI tokens used for this job (input = sent to the AI, output = written by it). */
+  aiUsage: { inputTokens: number; outputTokens: number; calls: number };
   counts: StatusCounts;
   totalCandidates: number;
   createdAt: string;
@@ -73,7 +74,7 @@ export interface Overview {
   totalCandidates: number;
   hires: number;
   replyRate: number | null;
-  aiCostUsd: number;
+  aiTokens: { inputTokens: number; outputTokens: number };
   counts: StatusCounts;
   recentActivity: ActivityItem[];
   jobs: { id: string; title: string; status: string; totalCandidates: number; hired: number }[];

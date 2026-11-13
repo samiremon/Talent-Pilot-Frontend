@@ -190,3 +190,11 @@ a.table__title:hover { color: var(--accent-text); }
   .form-grid { grid-template-columns: minmax(0, 1fr); }
   .job-form { padding: 16px; }
 }
+
+/* "Fill from description" helper under the job description box. */
+.ai-fill { display: grid; gap: 8px; justify-items: start; margin-top: -6px; }
+.ai-fill__notice {
+  width: 100%; padding: 10px 12px; border-radius: 8px; font-size: 13px;
+  background: var(--accent-weak); color: var(--text);
+}
+.ai-fill__removed { margin-top: 4px; color: var(--warn); }

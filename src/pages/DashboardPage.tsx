@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ActivityList, Funnel, LoadState } from '../components/DataParts';
 import { EmptyState, PageHeader } from '../components/PageParts';
-import { money, percent } from '../format';
+import { percent, tokens, tokenDetail } from '../format';
 import type { Overview } from '../types';
 import { useApi } from '../useApi';
 
@@ -33,7 +33,12 @@ export function DashboardPage() {
       {data && (
         <>
           <section className="kpis" aria-label="Key numbers">
-            <Kpi label="Active jobs" value={String(data.activeJobs)} note={`AI cost so far: ${money(data.aiCostUsd)}`} />
+            <Kpi
+              label="Active jobs"
+              value={String(data.activeJobs)}
+              note={`AI usage: ${tokens(data.aiTokens.inputTokens + data.aiTokens.outputTokens)} tokens`}
+              title={tokenDetail(data.aiTokens)}
+            />
             <Kpi label="Candidates" value={String(data.totalCandidates)} note="Across all jobs" />
             <Kpi label="Reply rate" value={percent(data.replyRate)} note="Replied ÷ contacted" />
             <Kpi label="Hires" value={String(data.hires)} note="All jobs" />
@@ -83,9 +88,9 @@ export function DashboardPage() {
   );
 }
 
-function Kpi({ label, value, note }: { label: string; value: string; note: string }) {
+function Kpi({ label, value, note, title }: { label: string; value: string; note: string; title?: string }) {
   return (
-    <div className="card kpi">
+    <div className="card kpi" title={title}>
       <div className="kpi__label">{label}</div>
       <div className="kpi__value">{value}</div>
       <div className="kpi__note">{note}</div>
