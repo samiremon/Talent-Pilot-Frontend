@@ -21,10 +21,11 @@ import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
 import { useStatusChange } from '../components/useStatusChange';
+import { EmailsTab } from './EmailsTab';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Segmented, TopPicker } from '../components/Segmented';
 import { EditContactDialog } from '../components/EditContactDialog';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown, profileSite } from '../format';
@@ -155,6 +156,21 @@ export function JobCandidatesTab() {
       else next.add(id);
       return next;
     });
+  // "Email them": a campaign for the ticked people (only Accepted ones with an email are
+  // added; the server checks), then over to the Emails tab to review the drafts.
+  const navigate = useNavigate();
+  const [emailError, setEmailError] = useState<string | null>(null);
+  async function emailSelected(sequence: 'single' | 'sequence') {
+    setEmailError(null);
+    try {
+      await api(`/jobs/${job.id}/campaigns`, { method: 'POST', body: { sequence, candidateIds: [...picked] } });
+      setPicked(new Set());
+      notifyDataChanged();
+      navigate(`/jobs/${job.id}/emails`);
+    } catch (err) {
+      setEmailError(err instanceof ApiError ? err.message : 'Could not create the campaign.');
+    }
+  }
   async function moveSelected(to: CandidateStatus) {
     await status.move([...picked], to);
     setPicked(new Set());
@@ -253,10 +269,27 @@ export function JobCandidatesTab() {
             ))}
           </select>
         </label>
+        <label className="bulk-bar__move">
+          Email them
+          <select
+            value=""
+            onChange={(e) => e.target.value && emailSelected(e.target.value as 'single' | 'sequence')}
+            aria-label="Create an email campaign for the selected candidates"
+          >
+            <option value="">Choose…</option>
+            <option value="single">Single email</option>
+            <option value="sequence">Day 0 / 3 / 7 sequence</option>
+          </select>
+        </label>
         <button type="button" className="link-button" onClick={() => setPicked(new Set())}>
           Clear
         </button>
       </div>
+    )}
+    {emailError && (
+      <p className="form-error" role="alert">
+        {emailError}
+      </p>
     )}
     {status.notice}
     <div className="card table-wrap">
@@ -472,14 +505,8 @@ export function JobRepliesTab() {
 }
 
 export function JobEmailsTab() {
-  return (
-    <div className="card">
-      <EmptyState icon={Mail} title="No outreach yet">
-        TalentPilot will draft a personalised email or a sequence (e.g. Day 0, 3 and 7) for accepted candidates. You
-        preview and approve before anything is sent.
-      </EmptyState>
-    </div>
-  );
+  const { job } = useJob();
+  return <EmailsTab jobId={job.id} />;
 }
 
 export function JobActivityTab() {

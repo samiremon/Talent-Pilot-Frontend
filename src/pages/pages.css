@@ -556,3 +556,35 @@ a.table__title:hover { color: var(--accent-text); }
 .status-notice .link-button { display: inline-flex; align-items: center; gap: 4px; }
 /* Candidate popup: "Move to: [Accept] [Reject]" */
 .status-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }
+
+/* ---------- Emails tab (outreach campaigns) ---------- */
+.emails-tab { display: grid; gap: 14px; }
+.mode-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; font-size: 14px; }
+.mode-banner--sandbox { background: var(--warn-bg); color: var(--text); border: 1px solid var(--warn); }
+.mode-banner--live { background: var(--bad-bg); color: var(--text); border: 1px solid var(--bad); }
+.mode-banner__limit { margin-left: auto; }
+.emails-tab__new { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.emails-tab__new .muted { margin-right: auto; }
+.campaign { padding: 16px; display: grid; gap: 12px; }
+.campaign__header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.campaign__name { margin: 0 0 4px; font-size: 16px; }
+.campaign__status { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+.campaign__status--draft { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
+.campaign__status--active { background: var(--accent-weak); border-color: var(--accent); color: var(--accent-text); }
+.campaign__status--done { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+.campaign__actions { display: flex; gap: 8px; }
+.campaign__progress { margin: 0; }
+.campaign__person { border-top: 1px solid var(--border); padding-top: 10px; display: grid; gap: 8px; }
+.campaign__person-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.campaign__remove { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+.email-step { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.email-step__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.email-step__day { font-weight: 600; font-size: 13px; }
+.email-step__status { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
+.email-step__status--sent { color: var(--ok); border-color: var(--ok); }
+.email-step__status--approved { color: var(--accent-text); border-color: var(--accent); }
+.email-step__status--failed, .email-step__status--skipped { color: var(--bad); border-color: var(--bad); }
+.email-step__edit { display: grid; gap: 6px; }
+.email-step__edit input, .email-step__edit textarea { width: 100%; font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
+.email-step__save { display: flex; align-items: center; gap: 8px; }
+.email-step__read p { margin: 4px 0 0; white-space: pre-wrap; font-size: 14px; }

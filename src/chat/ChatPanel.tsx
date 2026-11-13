@@ -22,7 +22,7 @@ import { api, API_BASE, ApiError } from '../api';
 import type { Job } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { notifyDataChanged } from '../useApi';
-import { AddCandidateCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
+import { AddCandidateCard, ApproveCampaignCard, CreateCampaignCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
 import { ImportCsvCard } from './ImportCsvCard';
 import { JobCard, type ActionCard, type DecisionResult } from './JobCard';
 import { RichText } from './RichText';
@@ -258,6 +258,8 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
               {message.card?.type === 'update_job' && <JobEditCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'delete_job' && <JobDeleteCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'import_csv' && <ImportCsvCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
+              {message.card?.type === 'create_campaign' && <CreateCampaignCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
+              {message.card?.type === 'approve_campaign' && <ApproveCampaignCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'change_status' && <StatusChangeCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'update_candidate' && <EditContactCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'delete_all_candidates' && <DeleteAllCandidatesCard card={message.card} onDecided={handleDecided} />}

@@ -4,6 +4,9 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <CreateCampaignCard> outreach: who (ticked; only Accepted with an email) + single / Day 0,3,7
+ *                    -> the AI drafts -> posts a preview with an <ApproveCampaignCard>
+ *   <ApproveCampaignCard> "Approve & send 6 emails" (nothing is sent before this)
  *   <StatusChangeCard> "Move to Accepted": who (ticked), from which status; ones the rules don't
  *                    allow are greyed out with the reason. Confirm -> moved (+ activity log)
  *   <EditContactCard>  "Edit contact: Rafi Karim": email / profile link, old -> new (editable)
@@ -21,7 +24,7 @@
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
  * Delete buttons on the Jobs page.
  */
-import { ArrowRightLeft, Check, PencilLine, RefreshCw, Search, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
+import { ArrowRightLeft, Check, Mail, PencilLine, RefreshCw, Search, Send, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
@@ -791,6 +794,168 @@ export function StatusChangeCard({ card, onDecided }: { card: ActionCard; onDeci
             </button>
           </div>
         )}
+      </div>
+    </section>
+  );
+}
+
+/** "Create campaign": who gets it (ticked) and single email vs Day 0 / 3 / 7. */
+export function CreateCampaignCard({
+  card,
+  onDecided,
+  onMessage,
+}: {
+  card: ActionCard;
+  onDecided: (r: DecisionResult) => void;
+  onMessage?: (message: ChatMessage) => void;
+}) {
+  const payload = card.payload as {
+    jobId: string;
+    jobCode?: string;
+    title?: string;
+    sequence: 'single' | 'sequence';
+    candidates: { id: string; name: string; email: string; score: number | null }[];
+  };
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set(payload.candidates.map((c) => c.id)));
+  const [sequence, setSequence] = useState<'single' | 'sequence'>(payload.sequence);
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const result = card.result as { taskId?: string | null } | null;
+  const toggle = (id: string) =>
+    setTicked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Proposed outreach campaign">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <Mail size={16} aria-hidden="true" /> Create campaign
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          {payload.jobCode} {payload.title}
+        </p>
+        <div className="segmented" role="radiogroup" aria-label="Single email or sequence">
+          {(['single', 'sequence'] as const).map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="radio"
+              aria-checked={sequence === s}
+              className={`segmented__option${sequence === s ? ' segmented__option--active' : ''}`}
+              onClick={() => setSequence(s)}
+              disabled={!pending}
+            >
+              {s === 'single' ? 'Single email' : 'Day 0 / 3 / 7'}
+            </button>
+          ))}
+        </div>
+        <ul className="status-pick">
+          {payload.candidates.map((c) => (
+            <li key={c.id}>
+              <label>
+                <input type="checkbox" checked={ticked.has(c.id)} onChange={() => toggle(c.id)} disabled={!pending} />
+                <strong>{c.name}</strong>
+                <span className="muted small">
+                  {c.email}
+                  {c.score !== null ? ` · ${c.score}` : ''}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        {card.notes.length > 0 && pending && (
+          <ul className="job-card__notes">
+            {card.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending ? (
+          <>
+            <div className="job-card__actions">
+              <button
+                type="button"
+                className="button"
+                onClick={() => decide('confirm', { candidateIds: [...ticked], sequence })}
+                disabled={busy !== null || ticked.size === 0}
+              >
+                <Check size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Creating…' : `Confirm: draft for ${ticked.size}`}
+              </button>
+              <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+                <X size={16} aria-hidden="true" /> Cancel
+              </button>
+            </div>
+            <p className="job-card__hint">This only writes drafts. You review them, and nothing is sent until you approve.</p>
+          </>
+        ) : (
+          card.status === 'confirmed' && (
+            <>
+              {result?.taskId && <LiveScoring jobId={payload.jobId} cardId={card.id} taskId={result.taskId} onMessage={onMessage} />}
+              <Link className="job-card__open" to={`/jobs/${payload.jobId}/emails`}>
+                Open the drafts →
+              </Link>
+            </>
+          )
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** "Approve & send": the only step that sends outreach. */
+export function ApproveCampaignCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as { jobId: string; jobCode?: string; name?: string; emails?: number; candidates?: number; stepDays?: number[]; mode?: string };
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const result = card.result as { taskId?: string | null } | null;
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Approve outreach campaign">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <Send size={16} aria-hidden="true" /> Approve &amp; send
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">{payload.name}</p>
+        <p className="small">
+          {payload.emails} email{payload.emails === 1 ? '' : 's'} to {payload.candidates} candidate{payload.candidates === 1 ? '' : 's'}
+          {(payload.stepDays?.length ?? 1) > 1 ? `, sent on Day ${payload.stepDays!.join(' / ')} (follow-ups stop if they reply)` : ''}.
+          {payload.mode === 'sandbox' ? ' Sandbox: they go to the test inbox (Mailpit), not to real candidates.' : ' Live: real emails to the candidates.'}
+        </p>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending ? (
+          <div className="job-card__actions">
+            <button type="button" className="button" onClick={() => decide('confirm')} disabled={busy !== null}>
+              <Send size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Approving…' : 'Approve & send'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Not yet
+            </button>
+          </div>
+        ) : (
+          card.status === 'confirmed' && result?.taskId && <LiveScoring jobId={payload.jobId} taskId={result.taskId} />
+        )}
+        <Link className="job-card__open" to={`/jobs/${payload.jobId}/emails`}>
+          {pending ? 'Check or edit the drafts first →' : 'Open the Emails tab →'}
+        </Link>
       </div>
     </section>
   );
