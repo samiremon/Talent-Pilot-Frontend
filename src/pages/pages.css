@@ -87,3 +87,68 @@
   .inbox__list { border-right: 0; border-bottom: 1px solid var(--border); }
   .funnel__row { grid-template-columns: 100px 1fr 28px; }
 }
+
+/* ---------- Data display (scores, statuses, tables, activity) ---------- */
+
+.small { font-size: 12px; }
+
+/* Score badge: green 80+, amber 60-79, red below 60, grey when not scored. */
+.score {
+  display: inline-grid; place-items: center;
+  min-width: 34px; height: 26px; padding: 0 6px; border-radius: 8px;
+  font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums;
+}
+.score--high { background: var(--ok-bg); color: var(--ok); }
+.score--mid { background: var(--warn-bg); color: var(--warn); }
+.score--low { background: var(--bad-bg); color: var(--bad); }
+.score--none { background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
+
+.chip-status {
+  display: inline-block; padding: 2px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  background: var(--accent-weak); color: var(--accent-text);
+}
+.chip-status--hired, .chip-status--interested, .chip-status--meeting_booked { background: var(--ok-bg); color: var(--ok); }
+.chip-status--rejected, .chip-status--unsubscribed, .chip-status--not_interested { background: var(--bad-bg); color: var(--bad); }
+.chip-status--sourced { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
+
+/* Who did it: Recruiter / AI / System. */
+.actor { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--text-2); }
+.actor--ai { background: var(--accent-weak); color: var(--accent-text); }
+.actor--recruiter { background: var(--ok-bg); color: var(--ok); }
+
+.activity { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.activity__item { display: grid; gap: 2px; }
+.activity__message--undone { text-decoration: line-through; color: var(--muted); }
+.activity__meta { font-size: 12px; color: var(--muted); }
+
+.link-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.link-list li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+/* Tables scroll sideways inside their card on narrow screens. */
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted); padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table__title { font-weight: 600; color: var(--text); text-decoration: none; }
+a.table__title:hover { color: var(--accent-text); }
+.evidence { display: block; margin-top: 4px; font-size: 12px; font-style: italic; color: var(--muted); }
+
+/* ---------- Job page header ---------- */
+
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin: -12px 0 10px; }
+.fact {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 999px; font-size: 12px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-2); text-decoration: none;
+}
+.skills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.skill { padding: 2px 8px; border-radius: 6px; font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); }
+.skill--must { background: var(--accent-weak); border-color: transparent; color: var(--accent-text); font-weight: 600; }
+.tab__count { margin-left: 6px; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+
+/* Pipeline board cards. */
+.board__card { padding: 10px; margin-bottom: 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.board__card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.board__name { font-weight: 600; font-size: 13px; }

@@ -1,0 +1,68 @@
+/**
+ * Jobs list, from GET /api/jobs. Each row links to the job's page.
+ */
+import { Briefcase } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { LoadState } from '../components/DataParts';
+import { EmptyState, PageHeader } from '../components/PageParts';
+import { money, orUnknown, remoteLabel, timeAgo } from '../format';
+import type { Job } from '../types';
+import { useApi } from '../useApi';
+
+export function JobsPage() {
+  const { data, error, loading } = useApi<{ jobs: Job[] }>('/jobs');
+
+  return (
+    <>
+      <PageHeader title="Jobs" subtitle="Every role you're hiring for." />
+      <LoadState loading={loading && !data} error={error} />
+
+      {data && data.jobs.length === 0 && (
+        <div className="card">
+          <EmptyState icon={Briefcase} title="No jobs yet">
+            Paste a job description into the chat and TalentPilot will extract the details for you to confirm.
+          </EmptyState>
+        </div>
+      )}
+
+      {data && data.jobs.length > 0 && (
+        // The wrapper scrolls sideways on narrow screens instead of squashing the table.
+        <div className="card table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th scope="col">Job</th>
+                <th scope="col">Location</th>
+                <th scope="col">Candidates</th>
+                <th scope="col">Contacted</th>
+                <th scope="col">Hired</th>
+                <th scope="col">AI cost</th>
+                <th scope="col">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.jobs.map((job) => (
+                <tr key={job.id}>
+                  <td>
+                    <Link to={`/jobs/${job.id}`} className="table__title">
+                      {job.title}
+                    </Link>
+                    <div className="muted small">{orUnknown(job.seniority)}</div>
+                  </td>
+                  <td>
+                    {orUnknown(job.location)} · {remoteLabel(job.remotePolicy)}
+                  </td>
+                  <td>{job.totalCandidates}</td>
+                  <td>{job.totalCandidates - job.counts.sourced - job.counts.accepted - job.counts.rejected}</td>
+                  <td>{job.counts.hired}</td>
+                  <td>{money(job.aiUsage.costUsd)}</td>
+                  <td className="muted">{timeAgo(job.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  );
+}

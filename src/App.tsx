@@ -25,7 +25,8 @@ import {
   JobRepliesTab,
 } from './pages/JobPage';
 import { LoginPage } from './pages/LoginPage';
-import { CandidatesPage, JobsPage, NotFoundPage, OutreachPage } from './pages/SimplePages';
+import { JobsPage } from './pages/JobsPage';
+import { CandidatesPage, NotFoundPage, OutreachPage } from './pages/SimplePages';
 
 export function App() {
   const { status } = useAuth();

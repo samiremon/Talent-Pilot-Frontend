@@ -1,23 +1,10 @@
 /**
- * Pages that are just a header + list for now: Jobs, Candidates, Outreach, and "not found".
+ * Pages that are just a header + message for now: Candidates, Outreach, and "not found".
  * Each shows its empty state until the backend provides data (next steps).
  */
-import { Briefcase, Compass, Mail, Users } from 'lucide-react';
+import { Compass, Mail, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/PageParts';
-
-export function JobsPage() {
-  return (
-    <>
-      <PageHeader title="Jobs" subtitle="Every role you're hiring for." />
-      <div className="card">
-        <EmptyState icon={Briefcase} title="No jobs yet">
-          Paste a job description into the chat and TalentPilot will extract the details for you to confirm.
-        </EmptyState>
-      </div>
-    </>
-  );
-}
 
 export function CandidatesPage() {
   return (
