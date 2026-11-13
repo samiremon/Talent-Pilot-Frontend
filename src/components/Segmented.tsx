@@ -104,7 +104,6 @@ export function TopPicker({ value, onChange }: { value: number; onChange: (n: nu
             className="segmented__number"
             value={text}
             onChange={(e) => typed(e.target.value)}
-            placeholder="N"
             aria-label="Show only the top N candidates"
           />
         </label>

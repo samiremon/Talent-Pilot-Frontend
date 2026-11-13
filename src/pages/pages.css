@@ -529,3 +529,10 @@ a.table__title:hover { color: var(--accent-text); }
   text-align: center;
 }
 .segmented__number:focus { outline: none; border-color: var(--accent); }
+
+/* Search box and the Top number box: the OUTER box shows focus (accent border), so the
+   app-wide focus glow on the input inside is switched off (it drew a second box). */
+.table-filters__search input:focus,
+.table-filters__search input:focus-visible { box-shadow: none; outline: none; border-radius: 0; }
+.table-filters__search:focus-within { box-shadow: var(--focus); }
+.segmented__number:focus-visible { box-shadow: none; border-color: var(--accent); }
