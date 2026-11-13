@@ -136,7 +136,9 @@ export function JobCandidatesTab() {
   // Remove a candidate (trash button / popup), with a confirmation popup first.
   const deleteCandidate = useDeleteCandidate(job.id, { onDeleted: () => setSelected(null) });
 
-  const bar = <SourcingBar jobId={job.id} latest={latestTask} />;
+  // No score AND no reason = the AI hasn't scored them yet (e.g. a run hit a problem).
+  const unscored = candidates.filter((c) => c.score === null && !c.scoreReason).length;
+  const bar = <SourcingBar jobId={job.id} latest={latestTask} unscored={unscored} />;
   if (candidates.length === 0) {
     return (
       <>

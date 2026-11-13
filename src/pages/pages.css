@@ -460,3 +460,7 @@ a.table__title:hover { color: var(--accent-text); }
 @media (max-width: 600px) {
   .source-row { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* "Score N unscored": amber, so it stands out as something that needs attention. */
+.button.button--warn { background: var(--warn-bg, #fef3c7); border-color: var(--warn, #b45309); color: var(--warn, #b45309); }
+.button.button--warn:hover:not(:disabled) { filter: brightness(0.96); }

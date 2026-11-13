@@ -4,6 +4,8 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <ScoreAgainCard>   "Score 22 unscored candidates in JOB-0002 again?" Confirm -> live progress
+ *                    -> the AI posts the result
  *   <FindCandidatesCard> "Find candidates for JOB-0003": sites + search words (editable),
  *                    Confirm -> web search -> new people scored -> the AI posts the best matches
  *   <DeleteCandidateCard> red card: "Remove Abir Hossain from JOB-0003?" Confirm / Keep
@@ -15,7 +17,7 @@
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
  * Delete buttons on the Jobs page.
  */
-import { Check, PencilLine, Search, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
+import { Check, PencilLine, RefreshCw, Search, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
@@ -516,6 +518,65 @@ export function FindCandidatesCard({
           card.status === 'confirmed' && (
             <>
               {result?.taskId && <LiveSearch jobId={payload.jobId} cardId={card.id} taskId={result.taskId} onMessage={onMessage} />}
+              <Link className="job-card__open" to={`/jobs/${payload.jobId}`}>
+                Open candidates →
+              </Link>
+            </>
+          )
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** "Score 22 unscored candidates in JOB-0002 again?" (offered when the AI had a problem). */
+export function ScoreAgainCard({
+  card,
+  onDecided,
+  onMessage,
+}: {
+  card: ActionCard;
+  onDecided: (r: DecisionResult) => void;
+  onMessage?: (message: ChatMessage) => void;
+}) {
+  const payload = card.payload as { jobId: string; jobCode?: string; title?: string; unscored?: number };
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const result = card.result as { taskId?: string | null } | null;
+  const n = payload.unscored ?? 0;
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Score unscored candidates again">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <RefreshCw size={16} aria-hidden="true" /> Score again
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          {pending ? 'Score' : card.status === 'confirmed' ? 'Scoring' : 'Not scoring'} the <strong>{n}</strong> unscored candidate
+          {n === 1 ? '' : 's'} in {payload.jobCode} {payload.title}
+          {pending ? ' again?' : '.'}
+        </p>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending ? (
+          <div className="job-card__actions">
+            <button type="button" className="button" onClick={() => decide('confirm')} disabled={busy !== null}>
+              <Check size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Starting…' : 'Confirm: score again'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Cancel
+            </button>
+          </div>
+        ) : (
+          card.status === 'confirmed' && (
+            <>
+              {result?.taskId && <LiveScoring jobId={payload.jobId} cardId={card.id} taskId={result.taskId} onMessage={onMessage} />}
               <Link className="job-card__open" to={`/jobs/${payload.jobId}`}>
                 Open candidates →
               </Link>

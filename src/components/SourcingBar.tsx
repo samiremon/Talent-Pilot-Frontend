@@ -3,6 +3,8 @@
  *
  *   [ Find candidates ] [ Upload CSV ] [ Add candidate ]   (live) Scoring… 15 of 23  ▓▓▓▓░░
  *
+ * - Score N unscored: only shown when some candidates have no score yet (e.g. the AI had a
+ *   problem with them); scores just those again. Same as the AI's "Score again" card.
  * - Find candidates: search LinkedIn / GitHub / Stack Overflow / Kaggle (via Google) for
  *   new people; they're added (duplicates skipped) and scored automatically.
  * - Add candidate: a small form for ONE person (same as asking the AI to add them).
@@ -13,9 +15,9 @@
  *
  * These call the same backend functions the AI will use from the chat.
  */
-import { FileUp, Search, UserPlus } from 'lucide-react';
+import { FileUp, RefreshCw, Search, UserPlus } from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
-import { API_BASE, ApiError } from '../api';
+import { api, API_BASE, ApiError } from '../api';
 import type { JobTask } from '../useJobTasks';
 import { AddCandidateDialog } from './AddCandidateDialog';
 import { FindCandidatesDialog } from './FindCandidatesDialog';
@@ -28,9 +30,9 @@ interface UploadResult {
   invalid: number;
 }
 
-export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask | null }) {
+export function SourcingBar({ jobId, latest, unscored = 0 }: { jobId: string; latest: JobTask | null; unscored?: number }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState<'upload' | null>(null);
+  const [busy, setBusy] = useState<'upload' | 'score' | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [adding, setAdding] = useState(false);
   const [finding, setFinding] = useState(false);
@@ -61,6 +63,21 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
     }
   }
 
+  /** Score the candidates that have no score yet (POST /jobs/:id/score). */
+  async function scoreAgain() {
+    setBusy('score');
+    setNotice(null);
+    try {
+      await api(`/jobs/${jobId}/score`, { method: 'POST', body: {} });
+      setNotice({ ok: true, text: `Scoring ${unscored} candidate${unscored === 1 ? '' : 's'} again…` });
+      notifyDataChanged();
+    } catch (err) {
+      setNotice({ ok: false, text: err instanceof ApiError ? err.message : 'Could not start scoring. Please try again.' });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const percent =
     latest && latest.progress.total > 0 ? Math.round((latest.progress.done / latest.progress.total) * 100) : latest?.status === 'done' ? 100 : 0;
 
@@ -77,6 +94,17 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
         <button type="button" className="button button--ghost" onClick={() => setAdding(true)} disabled={busy !== null}>
           <UserPlus size={16} aria-hidden="true" /> Add candidate
         </button>
+        {unscored > 0 && !active && (
+          <button
+            type="button"
+            className="button button--warn"
+            onClick={scoreAgain}
+            disabled={busy !== null}
+            title="These candidates have no score yet (the AI had a problem with them). Score them again."
+          >
+            <RefreshCw size={16} aria-hidden="true" /> {busy === 'score' ? 'Starting…' : `Score ${unscored} unscored`}
+          </button>
+        )}
       </div>
       <FindCandidatesDialog jobId={jobId} open={finding} onClose={() => setFinding(false)} onStarted={(text) => setNotice({ ok: true, text })} />
       <AddCandidateDialog
