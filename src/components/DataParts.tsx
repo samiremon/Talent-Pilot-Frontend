@@ -8,6 +8,7 @@
  *   <Funnel>        bars showing how many candidates are at each status
  */
 import { Activity } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { timeAgo } from '../format';
 import { PIPELINE_STATUSES, STATUS_LABELS } from '../pipeline';
 import type { ActivityItem, CandidateStatus, StatusCounts } from '../types';
@@ -46,12 +47,19 @@ export function StatusChip({ status }: { status: CandidateStatus }) {
   return <span className={`chip-status chip-status--${status}`}>{STATUS_LABELS[status]}</span>;
 }
 
-export function ActorTag({ actor }: { actor: ActivityItem['actor'] }) {
-  const label = { recruiter: 'Recruiter', ai: 'AI', system: 'System' }[actor];
+/**
+ * Who did it, with their real name:
+ *   recruiter -> "Rina"        (green)
+ *   ai        -> "AI for Rina" (purple)
+ *   system    -> "System"      (grey; background work nobody clicked)
+ */
+export function ActorTag({ actor, name }: { actor: ActivityItem['actor']; name?: string | null }) {
+  const label =
+    actor === 'recruiter' ? (name ?? 'A recruiter') : actor === 'ai' ? (name ? `AI for ${name}` : 'AI') : 'System';
   return <span className={`actor actor--${actor}`}>{label}</span>;
 }
 
-export function ActivityList({ items }: { items: ActivityItem[] }) {
+export function ActivityList({ items, showJob = false }: { items: ActivityItem[]; showJob?: boolean }) {
   if (items.length === 0) {
     return (
       <EmptyState icon={Activity} title="Nothing yet">
@@ -67,7 +75,13 @@ export function ActivityList({ items }: { items: ActivityItem[] }) {
             {item.message}
           </span>
           <span className="activity__meta">
-            <ActorTag actor={item.actor} /> · {timeAgo(item.createdAt)}
+            <ActorTag actor={item.actor} name={item.userName} /> · {timeAgo(item.createdAt)}
+            {showJob && (
+              <>
+                {' · '}
+                <Link to={`/jobs/${item.jobId}`}>{item.jobTitle}</Link>
+              </>
+            )}
             {item.undone && ' · undone'}
           </span>
         </li>

@@ -56,7 +56,7 @@ export function DashboardPage() {
               <h2 className="panel__title" id="activity-title">
                 Recent activity
               </h2>
-              <ActivityList items={data.recentActivity} />
+              <ActivityList items={data.recentActivity} showJob />
             </section>
           </div>
 

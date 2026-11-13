@@ -59,7 +59,11 @@ export interface Candidate {
 export interface ActivityItem {
   id: string;
   jobId: string;
+  jobTitle: string;
   candidateId: string | null;
+  /** The person behind it: the recruiter, or the recruiter whose AI did it. Null = system. */
+  userId: string | null;
+  userName: string | null;
   type: string;
   actor: 'recruiter' | 'ai' | 'system';
   message: string;
@@ -78,4 +82,40 @@ export interface Overview {
   counts: StatusCounts;
   recentActivity: ActivityItem[];
   jobs: { id: string; title: string; status: string; totalCandidates: number; hired: number }[];
+}
+
+/** One AI call in the token log (Activity → Token usage). */
+export interface TokenUsageItem {
+  id: string;
+  createdAt: string;
+  userId: string | null;
+  userName: string;
+  task: string;
+  taskLabel: string;
+  model: string;
+  role: 'agent' | 'bulk' | 'safety';
+  jobId: string | null;
+  jobTitle: string | null;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+export interface TokenTotals {
+  inputTokens: number;
+  outputTokens: number;
+  calls: number;
+}
+
+/** Activity → Token dashboard. */
+export interface TokenDashboard {
+  days: number;
+  since: string;
+  totals: { allTime: TokenTotals; lastDays: TokenTotals };
+  users: { userId: string; name: string; email: string | null; allTime: TokenTotals; lastDays: TokenTotals }[];
+}
+
+/** A page of a long list; ask for the next page with ?before=nextBefore. */
+export interface Page<T> {
+  items: T[];
+  nextBefore: string | null;
 }

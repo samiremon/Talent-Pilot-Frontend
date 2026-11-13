@@ -207,3 +207,30 @@ a.table__title:hover { color: var(--accent-text); }
 .plain-list { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
 .form-row .password-input input { padding-right: 40px; }
 @media (max-width: 800px) { .profile-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Activity module ---------- */
+
+.tab--icon { display: inline-flex; align-items: center; gap: 6px; }
+.load-more { display: flex; justify-content: center; padding: 14px; }
+.table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.table .strong { font-weight: 600; }
+.kpis--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* "Last N days" picker. */
+.days-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.days-picker label { font-weight: 600; }
+.days-picker input {
+  width: 80px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); font-variant-numeric: tabular-nums;
+}
+.days-picker input[aria-invalid="true"] { border-color: var(--bad); }
+.days-picker__quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.days-picker .form-hint { flex-basis: 100%; }
+.chip--active { border-color: var(--accent); background: var(--accent-weak); color: var(--accent-text); }
+
+/* Share bar in the dashboard table. */
+.share-cell { min-width: 140px; }
+.share-bar { display: block; height: 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }
+.share-bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+
+@media (max-width: 900px) { .kpis--3 { grid-template-columns: minmax(0, 1fr); } }

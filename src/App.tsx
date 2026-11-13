@@ -15,11 +15,13 @@
  *   /candidates            All candidates
  *   /outreach              Email campaigns
  *   /profile               Change your name / password
+ *   /activity[/tab]        Activity log, token usage, token dashboard
  *   anything else          "Page not found"
  */
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { AppShell } from './layout/AppShell';
+import { ActivityPage, ActivityTab, TokenDashboardTab, TokenUsageTab } from './pages/ActivityPage';
 import { DashboardPage } from './pages/DashboardPage';
 import {
   JobActivityTab,
@@ -86,6 +88,11 @@ export function App() {
         <Route path="candidates" element={<CandidatesPage />} />
         <Route path="outreach" element={<OutreachPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="activity" element={<ActivityPage />}>
+          <Route index element={<ActivityTab />} />
+          <Route path="token-usage" element={<TokenUsageTab />} />
+          <Route path="token-dashboard" element={<TokenDashboardTab />} />
+        </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
