@@ -22,6 +22,9 @@ export type StatusCounts = Record<CandidateStatus, number>;
 
 export interface Job {
   id: string;
+  /** Short readable id, e.g. "JOB-0007" (used by people and the AI). */
+  jobCode: string | null;
+  jobNumber: number | null;
   title: string;
   company: string | null;
   description?: string; // only on the single-job endpoint

@@ -267,3 +267,30 @@ a.table__title:hover { color: var(--accent-text); }
   font-size: 13px; line-height: 1.55;
 }
 @media (max-width: 600px) { .details-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Jobs list: Job ID column, a clear hover colour, and the row's Edit/Delete buttons. */
+.job-code { font-family: ui-monospace, 'JetBrains Mono', Menlo, monospace; font-size: 12px; font-weight: 600; color: var(--accent-text); white-space: nowrap; }
+.row-link { transition: background-color 0.12s; }
+.row-link:hover td, .row-link:focus-visible td { background: var(--accent-weak); }
+.row-link:hover td:first-child, .row-link:focus-visible td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+.row-actions { white-space: nowrap; text-align: right; }
+.row-actions .icon-button { color: var(--muted); }
+
+/* Confirmation popup. */
+.confirm-dialog {
+  width: min(440px, calc(100vw - 32px)); padding: 0;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); box-shadow: var(--shadow-lg);
+}
+.confirm-dialog::backdrop { background: rgba(15, 18, 26, 0.5); }
+.confirm-dialog__panel { padding: 20px; display: grid; gap: 12px; }
+.confirm-dialog__panel--danger { border-top: 4px solid var(--bad); }
+.confirm-dialog__title { margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+.confirm-dialog__panel--danger .confirm-dialog__title { color: var(--bad); }
+.confirm-dialog__body p { margin: 0 0 6px; }
+.confirm-dialog__actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Edit/Delete stay pinned to the right edge, visible even when the table scrolls sideways. */
+.table .row-actions { position: sticky; right: 0; background: var(--surface); width: 1%; padding-left: 8px; padding-right: 8px; }
+.row-link:hover td.row-actions, .row-link:focus-visible td.row-actions { background: var(--accent-weak); }
+.table thead th:last-child { position: sticky; right: 0; background: var(--surface); }

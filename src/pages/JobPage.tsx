@@ -11,11 +11,12 @@
  * This component loads the job and its candidates ONCE and hands them to whichever tab
  * is open (through react-router's "outlet context"), so switching tabs is instant.
  */
-import { History, Inbox, Info, Mail, Users } from 'lucide-react';
+import { History, Inbox, Info, Mail, Pencil, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
-import { NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
 import { JobDetailsDialog } from '../components/JobDetailsDialog';
+import { useDeleteJob } from '../components/useDeleteJob';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown } from '../format';
 import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
@@ -42,6 +43,9 @@ export function JobPage() {
   // "Job details" panel open? (Declared before the early return below: React's rule that
   // hooks always run in the same order.)
   const [showDetails, setShowDetails] = useState(false);
+  const navigate = useNavigate();
+  // After deleting, this page has nothing to show: go back to the list.
+  const deleteJob = useDeleteJob({ onDeleted: () => navigate('/jobs') });
   const candidatesRequest = useApi<{ candidates: Candidate[] }>(`/jobs/${jobId}/candidates`);
 
   const job = jobRequest.data?.job;
@@ -56,14 +60,23 @@ export function JobPage() {
       {/* Kept short on purpose: all the job's fields are one click away in "Job details". */}
       <PageHeader
         title={job.title}
-        subtitle={job.company ?? undefined}
+        subtitle={[job.jobCode, job.company].filter(Boolean).join(' · ') || undefined}
         actions={
-          <button type="button" className="button button--ghost" onClick={() => setShowDetails(true)}>
-            <Info size={16} aria-hidden="true" /> Job details
-          </button>
+          <>
+            <button type="button" className="button button--ghost" onClick={() => setShowDetails(true)}>
+              <Info size={16} aria-hidden="true" /> Job details
+            </button>
+            <Link to={`/jobs/${job.id}/edit`} className="button button--ghost">
+              <Pencil size={16} aria-hidden="true" /> Edit
+            </Link>
+            <button type="button" className="button button--ghost button--ghost-danger" onClick={() => deleteJob.ask(job)}>
+              <Trash2 size={16} aria-hidden="true" /> Delete
+            </button>
+          </>
         }
       />
       <JobDetailsDialog job={job} open={showDetails} onClose={() => setShowDetails(false)} />
+      {deleteJob.dialog}
 
       <nav className="tabs" aria-label="Job sections">
         {TABS.map((tab) => (

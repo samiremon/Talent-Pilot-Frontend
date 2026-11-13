@@ -11,6 +11,7 @@
  *   /                      Dashboard
  *   /jobs                  Jobs list
  *   /jobs/new              Create a job by hand
+ *   /jobs/:jobId/edit      Edit a job
  *   /jobs/:jobId[/tab]     One job, with tabs (see pages/JobPage.tsx)
  *   /candidates            All candidates
  *   /outreach              Email campaigns
@@ -37,7 +38,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { SignupPage } from './pages/SignupPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { JobsPage } from './pages/JobsPage';
-import { NewJobPage } from './pages/NewJobPage';
+import { EditJobPage, NewJobPage } from './pages/NewJobPage';
 import { CandidatesPage, NotFoundPage, OutreachPage } from './pages/SimplePages';
 
 export function App() {
@@ -81,6 +82,7 @@ export function App() {
         <Route index element={<DashboardPage />} />
         <Route path="jobs" element={<JobsPage />} />
         <Route path="jobs/new" element={<NewJobPage />} />
+        <Route path="jobs/:jobId/edit" element={<EditJobPage />} />
         <Route path="jobs/:jobId" element={<JobPage />}>
           <Route index element={<JobCandidatesTab />} />
           <Route path="pipeline" element={<JobPipelineTab />} />

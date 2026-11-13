@@ -247,3 +247,10 @@ a { color: var(--accent-text); }
   font-size: 1.5rem; letter-spacing: 0.5em; text-align: center; font-variant-numeric: tabular-nums;
   padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
 }
+
+/* Red buttons for destructive actions (delete). */
+.button--danger { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+.button--danger:hover:not(:disabled) { background: #991b1b; border-color: #991b1b; }
+.button--ghost-danger { color: var(--bad); }
+.button--ghost-danger:hover:not(:disabled) { background: var(--bad-bg); border-color: var(--bad); }
+.icon-button--danger:hover { background: var(--bad-bg); color: var(--bad); }

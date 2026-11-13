@@ -1,5 +1,11 @@
 /**
- * "New job" form at /jobs/new: the recruiter creates a job by hand.
+ * The job form, used for BOTH:
+ *   /jobs/new        "New job": create a job by hand (POST /api/jobs)
+ *   /jobs/:id/edit   "Edit job": the same form, pre-filled; saves with PATCH /api/jobs/:id
+ *                    and sends only the fields you changed
+ * (The AI can do both too: its job card / edit card call the same backend functions.)
+ *
+ * Creating a job:
  *
  * This does exactly what the AI's job card does when you press Confirm: it calls
  * POST /api/jobs. The backend logs it as done by the recruiter, and the assistant reads
@@ -16,11 +22,13 @@
  */
 import { Sparkles } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { PageHeader } from '../components/PageParts';
 import { TagInput } from '../components/TagInput';
+import { LoadState } from '../components/DataParts';
 import { tokens } from '../format';
+import { notifyDataChanged, useApi } from '../useApi';
 import type { Job } from '../types';
 
 type RemotePolicy = Job['remotePolicy'];
@@ -75,9 +83,35 @@ interface FieldProblem {
   message: string;
 }
 
-export function NewJobPage() {
+/** Turns a saved job into form values (null -> empty box). */
+function toForm(job: Job): FormState {
+  return {
+    title: job.title,
+    company: job.company ?? '',
+    description: job.description ?? '',
+    sourceUrl: job.sourceUrl ?? '',
+    mustHaveSkills: job.mustHaveSkills,
+    niceToHaveSkills: job.niceToHaveSkills,
+    seniority: job.seniority ?? '',
+    location: job.location ?? '',
+    salary: job.salary ?? '',
+    remotePolicy: job.remotePolicy,
+  };
+}
+
+/** /jobs/:id/edit: loads the job, then shows the same form in edit mode. */
+export function EditJobPage() {
+  const { jobId = '' } = useParams();
+  const { data, error, loading } = useApi<{ job: Job }>(`/jobs/${jobId}`);
+  if (!data) return <LoadState loading={loading} error={error} />;
+  // key: a different job gets a fresh form.
+  return <NewJobPage key={data.job.id} job={data.job} />;
+}
+
+export function NewJobPage({ job }: { job?: Job } = {}) {
+  const editing = Boolean(job);
   const navigate = useNavigate();
-  const [form, setForm] = useState<FormState>(EMPTY);
+  const [form, setForm] = useState<FormState>(() => (job ? toForm(job) : EMPTY));
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -129,9 +163,22 @@ export function NewJobPage() {
     setError(null);
     try {
       // extractionId: lets the backend count the AI fill's tokens on this new job.
+      if (job) {
+        // Edit: send only what changed (the backend logs exactly those fields).
+        const original = toForm(job);
+        const changes = Object.fromEntries(
+          Object.entries(form).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(original[key as keyof FormState])),
+        );
+        if (Object.keys(changes).length > 0) {
+          await api<{ job: Job }>(`/jobs/${job.id}`, { method: 'PATCH', body: changes });
+          notifyDataChanged();
+        }
+        navigate(`/jobs/${job.id}`);
+        return;
+      }
       const body = { ...form, extractionId: extraction?.extractionId };
-      const { job } = await api<{ job: Job }>('/jobs', { method: 'POST', body });
-      navigate(`/jobs/${job.id}`); // straight to the new job's page
+      const created = await api<{ job: Job }>('/jobs', { method: 'POST', body });
+      navigate(`/jobs/${created.job.id}`); // straight to the new job's page
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -165,8 +212,12 @@ export function NewJobPage() {
   return (
     <>
       <PageHeader
-        title="New job"
-        subtitle="Fill this in yourself, or paste the job description into the chat and let TalentPilot fill it for you."
+        title={job ? `Edit ${job.jobCode ?? 'job'}` : 'New job'}
+        subtitle={
+          job
+            ? `${job.title}: change anything, then save. Only the fields you change are updated.`
+            : 'Fill this in yourself, or paste the job description into the chat and let TalentPilot fill it for you.'
+        }
       />
 
       <form className="card job-form" onSubmit={handleSubmit} noValidate>
@@ -325,11 +376,11 @@ export function NewJobPage() {
         )}
 
         <div className="form-actions">
-          <Link to="/jobs" className="button button--ghost">
+          <Link to={job ? `/jobs/${job.id}` : '/jobs'} className="button button--ghost">
             Cancel
           </Link>
           <button type="submit" className="button" disabled={saving || !form.title.trim() || !form.description.trim()}>
-            {saving ? 'Creating…' : 'Create job'}
+            {saving ? (editing ? 'Saving…' : 'Creating…') : editing ? 'Save changes' : 'Create job'}
           </button>
         </div>
       </form>

@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { notifyDataChanged } from '../useApi';
+import { JobDeleteCard, JobEditCard } from './ActionCards';
 import { JobCard, type ActionCard, type DecisionResult } from './JobCard';
 import { RichText } from './RichText';
 import type { ChatMode } from './useChatPanel';
@@ -189,7 +190,10 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
                   {message.role === 'assistant' ? <RichText text={message.text} /> : message.text}
                 </div>
               )}
+              {/* Cards: something to fill in / approve (different look from chat bubbles). */}
               {message.card?.type === 'create_job' && <JobCard card={message.card} onDecided={handleDecided} />}
+              {message.card?.type === 'update_job' && <JobEditCard card={message.card} onDecided={handleDecided} />}
+              {message.card?.type === 'delete_job' && <JobDeleteCard card={message.card} onDecided={handleDecided} />}
             </div>
           </div>
         ))}
