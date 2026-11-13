@@ -446,3 +446,17 @@ a.table__title:hover { color: var(--accent-text); }
 /* Daily tokens row on the Remaining usage card: status word in green / red. */
 .limit__value--ok strong { color: var(--ok); }
 .limit__value--bad strong { color: var(--bad); }
+
+/* "LinkedIn ↗" profile link column on the candidates table. */
+.profile-cell { white-space: nowrap; }
+.profile-cell a { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Find candidates popup: one row per site (tick + its search words). */
+.source-list { border: 0; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
+.source-row { display: grid; grid-template-columns: minmax(170px, auto) 1fr; gap: 10px; align-items: center; }
+.source-row__name { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.source-row__query { width: 100%; min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+.source-row--off .source-row__query { opacity: 0.5; }
+@media (max-width: 600px) {
+  .source-row { grid-template-columns: 1fr; gap: 4px; }
+}

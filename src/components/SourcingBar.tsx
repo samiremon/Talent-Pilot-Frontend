@@ -1,8 +1,10 @@
 /**
  * The bar above a job's candidates:
  *
- *   [ Upload CSV ] [ Add candidate ]                 (live) Scoring… 15 of 23  ▓▓▓▓░░
+ *   [ Find candidates ] [ Upload CSV ] [ Add candidate ]   (live) Scoring… 15 of 23  ▓▓▓▓░░
  *
+ * - Find candidates: search LinkedIn / GitHub / Stack Overflow / Kaggle (via Google) for
+ *   new people; they're added (duplicates skipped) and scored automatically.
  * - Add candidate: a small form for ONE person (same as asking the AI to add them).
  *
  * - Upload CSV: pick a .csv file -> candidates are added (duplicates skipped) and AI
@@ -11,11 +13,12 @@
  *
  * These call the same backend functions the AI will use from the chat.
  */
-import { FileUp, UserPlus } from 'lucide-react';
+import { FileUp, Search, UserPlus } from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
 import { API_BASE, ApiError } from '../api';
 import type { JobTask } from '../useJobTasks';
 import { AddCandidateDialog } from './AddCandidateDialog';
+import { FindCandidatesDialog } from './FindCandidatesDialog';
 import { notifyDataChanged } from '../useApi';
 
 interface UploadResult {
@@ -30,6 +33,7 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
   const [busy, setBusy] = useState<'upload' | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [adding, setAdding] = useState(false);
+  const [finding, setFinding] = useState(false);
   const active = latest && (latest.status === 'queued' || latest.status === 'running');
 
   async function upload(event: ChangeEvent<HTMLInputElement>) {
@@ -64,13 +68,17 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
     <div className="sourcing-bar">
       <div className="sourcing-bar__actions">
         <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={upload} />
-        <button type="button" className="button" onClick={() => fileRef.current?.click()} disabled={busy !== null}>
+        <button type="button" className="button" onClick={() => setFinding(true)} disabled={busy !== null}>
+          <Search size={16} aria-hidden="true" /> Find candidates
+        </button>
+        <button type="button" className="button button--ghost" onClick={() => fileRef.current?.click()} disabled={busy !== null}>
           <FileUp size={16} aria-hidden="true" /> {busy === 'upload' ? 'Uploading…' : 'Upload CSV'}
         </button>
         <button type="button" className="button button--ghost" onClick={() => setAdding(true)} disabled={busy !== null}>
           <UserPlus size={16} aria-hidden="true" /> Add candidate
         </button>
       </div>
+      <FindCandidatesDialog jobId={jobId} open={finding} onClose={() => setFinding(false)} onStarted={(text) => setNotice({ ok: true, text })} />
       <AddCandidateDialog
         jobId={jobId}
         open={adding}
@@ -91,7 +99,7 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
               aria-valuenow={percent}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Scoring progress"
+              aria-label={latest.type === 'source_candidates' ? 'Web search progress' : 'Scoring progress'}
             >
               <span style={{ width: `${percent}%` }} />
             </span>

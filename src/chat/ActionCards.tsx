@@ -4,6 +4,8 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <FindCandidatesCard> "Find candidates for JOB-0003": sites + search words (editable),
+ *                    Confirm -> web search -> new people scored -> the AI posts the best matches
  *   <DeleteCandidateCard> red card: "Remove Abir Hossain from JOB-0003?" Confirm / Keep
  *   <AddCandidateCard> "Add candidate to JOB-0007": every field editable (e.g. fix an email
  *                    typo the AI pointed out), Confirm -> added + scored, with live progress;
@@ -13,13 +15,15 @@
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
  * Delete buttons on the Jobs page.
  */
-import { Check, PencilLine, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
-import { useState } from 'react';
+import { Check, PencilLine, Search, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { remoteLabel } from '../format';
 import type { Job } from '../types';
 import type { ChatMessage } from './ChatPanel';
+import { SOURCE_HINTS, type SourceSearch } from '../components/FindCandidatesDialog';
+import { useJobTasks } from '../useJobTasks';
 import { LiveScoring } from './ImportCsvCard';
 import type { ActionCard, DecisionResult } from './JobCard';
 
@@ -375,6 +379,148 @@ export function DeleteCandidateCard({ card, onDecided }: { card: ActionCard; onD
               <X size={16} aria-hidden="true" /> Keep
             </button>
           </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Live progress for a confirmed web search: first the search ("LinkedIn page 1 of 1: 9
+ * found"), then the scoring of the new people. When both are finished it asks the server
+ * for the AI's follow-up ("found 24 profiles: 19 new. Best new matches: …").
+ */
+function LiveSearch({ jobId, cardId, taskId, onMessage }: { jobId: string; cardId: string; taskId: string; onMessage?: (m: ChatMessage) => void }) {
+  const { tasks } = useJobTasks(jobId);
+  const asked = useRef(false);
+  const searchTask = tasks.find((t) => t.id === taskId);
+  // The scoring the search started (created after it).
+  const scoring = searchTask
+    ? tasks.find((t) => t.type === 'score_candidates' && t.createdAt && searchTask.createdAt && t.createdAt >= searchTask.createdAt)
+    : undefined;
+  const isActive = (t?: { status: string }) => t?.status === 'queued' || t?.status === 'running';
+  const finished = Boolean(searchTask) && !isActive(searchTask) && !isActive(scoring);
+
+  useEffect(() => {
+    if (!finished || !onMessage || asked.current) return;
+    asked.current = true;
+    api<{ message: ChatMessage }>(`/chat/actions/${cardId}/follow-up`, { method: 'POST', body: {} })
+      .then((data) => onMessage(data.message))
+      .catch(() => {
+        asked.current = false; // e.g. scoring hadn't been queued yet: try again on the next update
+      });
+  }, [finished, cardId, onMessage, tasks]);
+
+  const shown = isActive(scoring) || (scoring && !isActive(searchTask)) ? scoring : searchTask;
+  if (!shown) return <p className="job-card__hint">Starting the web search…</p>;
+  const percent = shown.progress.total ? Math.round((shown.progress.done / shown.progress.total) * 100) : 100;
+  return (
+    <div className={`task-progress task-progress--${shown.status}`} role="status" aria-live="polite">
+      <span className="task-progress__text">
+        {isActive(shown) && <span className="task-progress__dot" aria-hidden="true" />}
+        {shown.message}
+      </span>
+      {shown.progress.total > 0 && (
+        <span className="task-progress__track" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Progress">
+          <span style={{ width: `${percent}%` }} />
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** "Find candidates for JOB-0003": which sites, with what search words, how many results. */
+export function FindCandidatesCard({
+  card,
+  onDecided,
+  onMessage,
+}: {
+  card: ActionCard;
+  onDecided: (r: DecisionResult) => void;
+  onMessage?: (message: ChatMessage) => void;
+}) {
+  const payload = card.payload as { jobId: string; jobCode?: string; title?: string; searches: SourceSearch[]; pages: number };
+  const [searches, setSearches] = useState<SourceSearch[]>(payload.searches);
+  const [pages, setPages] = useState(payload.pages ?? 1);
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const result = card.result as { taskId?: string | null } | null;
+  const chosen = searches.filter((s) => s.checked);
+  const update = (source: SourceSearch['source'], change: Partial<SourceSearch>) =>
+    setSearches((all) => all.map((s) => (s.source === source ? { ...s, ...change } : s)));
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Proposed web search for candidates">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <Search size={16} aria-hidden="true" /> Find candidates
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          → {payload.jobCode} {payload.title}
+        </p>
+        <div className="source-list source-list--card">
+          {searches.map((s) => (
+            <div key={s.source} className={`source-row${s.checked ? '' : ' source-row--off'}`}>
+              <label className="source-row__name">
+                <input type="checkbox" checked={Boolean(s.checked)} onChange={(e) => update(s.source, { checked: e.target.checked })} disabled={!pending} />
+                <strong>{s.label}</strong> <span className="muted small">{SOURCE_HINTS[s.source]}</span>
+              </label>
+              <input
+                className="source-row__query"
+                value={s.query}
+                onChange={(e) => update(s.source, { query: e.target.value })}
+                disabled={!pending || !s.checked}
+                aria-label={`${s.label} search words`}
+              />
+            </div>
+          ))}
+        </div>
+        <label className="job-card__field">
+          <span>Results per site</span>
+          <select value={pages} onChange={(e) => setPages(Number(e.target.value))} disabled={!pending}>
+            <option value={1}>Up to 10</option>
+            <option value={2}>Up to 20</option>
+            <option value={3}>Up to 30</option>
+          </select>
+        </label>
+        {pending && (
+          <p className="job-card__hint">
+            {chosen.length
+              ? `Up to ${chosen.length * pages * 10} profiles · ${chosen.length * pages} web search${chosen.length * pages === 1 ? '' : 'es'}. New people are added (duplicates skipped) and scored automatically.`
+              : 'Tick at least one site.'}
+          </p>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending ? (
+          <div className="job-card__actions">
+            <button
+              type="button"
+              className="button"
+              onClick={() => decide('confirm', { searches, pages })}
+              disabled={busy !== null || chosen.length === 0 || chosen.some((s) => s.query.trim().length < 3)}
+            >
+              <Check size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Starting…' : 'Confirm: search & score'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Cancel
+            </button>
+          </div>
+        ) : (
+          card.status === 'confirmed' && (
+            <>
+              {result?.taskId && <LiveSearch jobId={payload.jobId} cardId={card.id} taskId={result.taskId} onMessage={onMessage} />}
+              <Link className="job-card__open" to={`/jobs/${payload.jobId}`}>
+                Open candidates →
+              </Link>
+            </>
+          )
         )}
       </div>
     </section>

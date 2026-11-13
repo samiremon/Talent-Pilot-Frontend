@@ -256,3 +256,7 @@
 .job-card__textarea { width: 100%; min-width: 0; padding: 6px 8px; font: inherit; font-size: 13px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); resize: vertical; }
 .job-card__textarea:disabled { background: transparent; border-color: var(--border); }
 .chat__hint--error { color: var(--bad); font-weight: 600; }
+
+/* Find candidates card: the site rows stack (the chat panel is narrow). */
+.source-list--card { margin: 8px 0; }
+.source-list--card .source-row { grid-template-columns: 1fr; gap: 4px; }

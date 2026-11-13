@@ -44,3 +44,21 @@ export function timeAgo(iso: string, now = Date.now()): string {
   if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
   return new Date(iso).toLocaleDateString();
 }
+
+/**
+ * Which site a profile link is on, for the "Profile" column: LinkedIn, GitHub,
+ * Stack Overflow, Kaggle, or the website's own name (e.g. "janedoe.dev").
+ */
+export function profileSite(url: string): string {
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    if (host.endsWith('linkedin.com')) return 'LinkedIn';
+    if (host === 'github.com') return 'GitHub';
+    if (host.endsWith('stackoverflow.com')) return 'Stack Overflow';
+    if (host === 'kaggle.com') return 'Kaggle';
+    if (host === 'example.com') return 'Sample profile';
+    return host;
+  } catch {
+    return 'Profile';
+  }
+}

@@ -16,7 +16,7 @@
  */
 import { ExternalLink, Mail, ShieldAlert, Trash2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { orUnknown, timeAgo } from '../format';
+import { orUnknown, profileSite, timeAgo } from '../format';
 import type { Candidate } from '../types';
 import { ScoreBadge, StatusChip } from './DataParts';
 
@@ -145,7 +145,10 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
             </div>
             <div className="details-grid__item">
               <dt>Source</dt>
-              <dd>{SOURCE_LABELS[candidate.source]}</dd>
+              <dd>
+                {SOURCE_LABELS[candidate.source]}
+                {candidate.source === 'web' && candidate.profileUrl && ` · ${profileSite(candidate.profileUrl)}`}
+              </dd>
             </div>
             <div className="details-grid__item">
               <dt>Added</dt>

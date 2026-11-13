@@ -11,7 +11,7 @@
  * This component loads the job and its candidates ONCE and hands them to whichever tab
  * is open (through react-router's "outlet context"), so switching tabs is instant.
  */
-import { History, Inbox, Info, Mail, Pencil, Search, Trash2, Users } from 'lucide-react';
+import { ExternalLink, History, Inbox, Info, Mail, Pencil, Search, Trash2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
@@ -22,7 +22,7 @@ import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
-import { orUnknown } from '../format';
+import { orUnknown, profileSite } from '../format';
 import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
 import { rankCandidates } from '../ranking';
 import type { ActivityItem, Candidate, Job } from '../types';
@@ -188,6 +188,7 @@ export function JobCandidatesTab() {
             </th>
             <th scope="col">Score</th>
             <th scope="col">Candidate</th>
+            <th scope="col">Profile</th>
             <th scope="col">Why</th>
             <th scope="col">Status</th>
             <th scope="col" className="row-actions">
@@ -198,7 +199,7 @@ export function JobCandidatesTab() {
         <tbody>
           {shown.length === 0 && (
             <tr>
-              <td colSpan={6} className="muted table__empty">
+              <td colSpan={7} className="muted table__empty">
                 {query ? `No candidate named "${search.trim()}"${top ? ` in the top ${top}` : ''}.` : 'No scored candidates yet.'}
               </td>
             </tr>
@@ -225,17 +226,24 @@ export function JobCandidatesTab() {
               <td>
                 <div className="table__title">{c.name}</div>
                 <div className="muted small">{orUnknown(c.headline)}</div>
-                <div className="small">
-                  {c.profileUrl ? (
-                    <a href={c.profileUrl} target="_blank" rel="noreferrer noopener" onClick={(event) => event.stopPropagation()}>
-                      Profile
-                    </a>
-                  ) : (
-                    <span className="muted">No profile link</span>
-                  )}
-                  {' · '}
-                  <span className="muted">{c.email ?? 'Email unknown'}</span>
-                </div>
+                <div className="muted small">{c.email ?? 'Email unknown'}</div>
+              </td>
+              <td className="profile-cell">
+                {/* Their LinkedIn (or GitHub, Stack Overflow, ...) page, in a new tab. */}
+                {c.profileUrl ? (
+                  <a
+                    href={c.profileUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    title={c.profileUrl}
+                  >
+                    {profileSite(c.profileUrl)} <ExternalLink size={12} aria-hidden="true" />
+                  </a>
+                ) : (
+                  <span className="muted">–</span>
+                )}
               </td>
               <td>
                 <div>{c.scoreReason ?? <span className="muted">Not scored yet</span>}</div>
