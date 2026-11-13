@@ -468,7 +468,7 @@ a.table__title:hover { color: var(--accent-text); }
 /* Segmented control ("Show: All | Top 5 | …", "Email: All | Found | Missing"):
    a light track with the chosen option raised in white, accent-coloured text. */
 .segmented-field { display: inline-flex; align-items: center; gap: 8px; }
-.segmented-field__label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.segmented-field__label { font-size: 14px; color: var(--text-2); }
 .segmented {
   display: inline-flex;
   padding: 3px;
@@ -514,3 +514,18 @@ a.table__title:hover { color: var(--accent-text); }
   font-variant-numeric: tabular-nums;
 }
 .segmented__option--active .segmented__count { background: var(--accent-weak); color: var(--accent-text); }
+
+/* "Top [ N ]": the number box sits inside the option. */
+.segmented__option--input { cursor: text; padding-right: 6px; }
+.segmented__number {
+  width: 44px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: center;
+}
+.segmented__number:focus { outline: none; border-color: var(--accent); }

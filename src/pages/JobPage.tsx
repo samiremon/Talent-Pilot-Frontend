@@ -21,7 +21,7 @@ import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { Segmented } from '../components/Segmented';
+import { Segmented, TopPicker } from '../components/Segmented';
 import { api } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
@@ -111,9 +111,6 @@ function useJob(): JobContext {
   return useOutletContext<JobContext>();
 }
 
-/** "Show" choices for the top-N filter: everyone, or the best 5 / 10 / 20 / 50. */
-const TOP_CHOICES = [5, 10, 20, 50];
-
 export function JobCandidatesTab() {
   const { job, candidates, latestTask } = useJob();
   // The candidate whose details popup is open (null = closed).
@@ -128,8 +125,8 @@ export function JobCandidatesTab() {
   const ranks = useMemo(() => rankCandidates(candidates), [candidates]);
   const scoredCount = ranks.size;
 
-  // The list arrives best score first (unscored last). Top N = ranks 1..N (people who
-  // tie on the Nth score are all kept), then the name search narrows it further.
+  // The list arrives best score first (unscored last). Top N = exactly ranks 1..N (ranks are
+  // never shared), then the email filter and the name search narrow it further.
   const query = search.trim().toLowerCase();
   const shown = candidates.filter((c) => {
     if (top > 0) {
@@ -177,12 +174,7 @@ export function JobCandidatesTab() {
           aria-label="Search candidates by name"
         />
       </label>
-      <Segmented
-        label="Show"
-        value={top}
-        onChange={setTop}
-        options={[{ value: 0, label: 'All' }, ...TOP_CHOICES.map((n) => ({ value: n, label: `Top ${n}` }))]}
-      />
+      <TopPicker value={top} onChange={setTop} />
       <Segmented
         label="Email"
         value={emailFilter}
