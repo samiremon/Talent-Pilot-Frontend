@@ -43,10 +43,14 @@ const SOURCE_LABELS: Record<Candidate['source'], string> = { csv: 'CSV upload', 
 
 interface Props {
   candidate: Candidate | null;
+  /** Their rank by score (#1 = best), if they have a score. */
+  rank?: number;
+  /** How many candidates in the job are ranked (scored). */
+  rankedCount?: number;
   onClose: () => void;
 }
 
-export function CandidateDetailsDialog({ candidate, onClose }: Props) {
+export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -85,6 +89,12 @@ export function CandidateDetailsDialog({ candidate, onClose }: Props) {
           </header>
 
           <dl className="details-grid">
+            {rankedCount !== undefined && (
+              <div className="details-grid__item">
+                <dt>Rank</dt>
+                <dd>{rank ? `#${rank} of ${rankedCount} scored` : 'Not ranked yet (no score)'}</dd>
+              </div>
+            )}
             <div className="details-grid__item">
               <dt>Status</dt>
               <dd>

@@ -17,7 +17,7 @@
  * the panel is only HIDDEN, not removed, so the conversation is still there when it reopens.
  */
 import { Bot, Maximize2, Minimize2, Minus, Paperclip, Send, X } from 'lucide-react';
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { api, API_BASE, ApiError } from '../api';
 import type { Job } from '../types';
 import { useAuth } from '../auth/AuthContext';
@@ -166,6 +166,12 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
     if (result.card.status === 'confirmed') notifyDataChanged();
   }
 
+  /** A message posted later by a card (e.g. "scored 72/100, rank #5"). Shown once. */
+  const handleCardMessage = useCallback((message: ChatMessage) => {
+    setMessages((current) => (current.some((m) => m.id === message.id) ? current : [...current, message]));
+    notifyDataChanged();
+  }, []);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void send(draft);
@@ -246,8 +252,8 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
               {message.card?.type === 'create_job' && <JobCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'update_job' && <JobEditCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'delete_job' && <JobDeleteCard card={message.card} onDecided={handleDecided} />}
-              {message.card?.type === 'import_csv' && <ImportCsvCard card={message.card} onDecided={handleDecided} />}
-              {message.card?.type === 'add_candidate' && <AddCandidateCard card={message.card} onDecided={handleDecided} />}
+              {message.card?.type === 'import_csv' && <ImportCsvCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
+              {message.card?.type === 'add_candidate' && <AddCandidateCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
             </div>
           </div>
         ))}

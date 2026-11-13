@@ -11,8 +11,8 @@
  * This component loads the job and its candidates ONCE and hands them to whichever tab
  * is open (through react-router's "outlet context"), so switching tabs is instant.
  */
-import { History, Inbox, Info, Mail, Pencil, Trash2, Users } from 'lucide-react';
-import { useState } from 'react';
+import { History, Inbox, Info, Mail, Pencil, Search, Trash2, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
 import { JobDetailsDialog } from '../components/JobDetailsDialog';
@@ -23,6 +23,7 @@ import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown } from '../format';
 import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
+import { rankCandidates } from '../ranking';
 import type { ActivityItem, Candidate, Job } from '../types';
 import { useApi } from '../useApi';
 
@@ -106,10 +107,31 @@ function useJob(): JobContext {
   return useOutletContext<JobContext>();
 }
 
+/** "Show" choices for the top-N filter: everyone, or the best 5 / 10 / 20 / 50. */
+const TOP_CHOICES = [5, 10, 20, 50];
+
 export function JobCandidatesTab() {
   const { job, candidates, latestTask } = useJob();
   // The candidate whose details popup is open (null = closed).
   const [selected, setSelected] = useState<Candidate | null>(null);
+  // Filters: search by name, and "show only the top N by score" (0 = everyone).
+  const [search, setSearch] = useState('');
+  const [top, setTop] = useState(0);
+  // Rank by score (#1 = best). Computed on ALL candidates, so filtering never changes ranks.
+  const ranks = useMemo(() => rankCandidates(candidates), [candidates]);
+  const scoredCount = ranks.size;
+
+  // The list arrives best score first (unscored last). Top N = ranks 1..N (people who
+  // tie on the Nth score are all kept), then the name search narrows it further.
+  const query = search.trim().toLowerCase();
+  const shown = candidates.filter((c) => {
+    if (top > 0) {
+      const rank = ranks.get(c.id);
+      if (rank === undefined || rank > top) return false;
+    }
+    return !query || c.name.toLowerCase().includes(query);
+  });
+
   const bar = <SourcingBar jobId={job.id} latest={latestTask} />;
   if (candidates.length === 0) {
     return (
@@ -127,10 +149,39 @@ export function JobCandidatesTab() {
   return (
     <>
     {bar}
+    <div className="table-filters" role="search">
+      <label className="table-filters__search">
+        <Search size={16} aria-hidden="true" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name"
+          aria-label="Search candidates by name"
+        />
+      </label>
+      <label className="table-filters__top">
+        Show
+        <select value={top} onChange={(e) => setTop(Number(e.target.value))} aria-label="Show the top candidates">
+          <option value={0}>All candidates</option>
+          {TOP_CHOICES.map((n) => (
+            <option key={n} value={n}>
+              Top {n}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="muted small table-filters__count">
+        Showing {shown.length} of {candidates.length} · {scoredCount} scored
+      </span>
+    </div>
     <div className="card table-wrap">
       <table className="table">
         <thead>
           <tr>
+            <th scope="col" title="Rank by AI score: #1 = best match">
+              Rank
+            </th>
             <th scope="col">Score</th>
             <th scope="col">Candidate</th>
             <th scope="col">Why</th>
@@ -138,7 +189,14 @@ export function JobCandidatesTab() {
           </tr>
         </thead>
         <tbody>
-          {candidates.map((c) => (
+          {shown.length === 0 && (
+            <tr>
+              <td colSpan={5} className="muted table__empty">
+                {query ? `No candidate named "${search.trim()}"${top ? ` in the top ${top}` : ''}.` : 'No scored candidates yet.'}
+              </td>
+            </tr>
+          )}
+          {shown.map((c) => (
             <tr
               key={c.id}
               className="row-link"
@@ -150,6 +208,9 @@ export function JobCandidatesTab() {
                 if (event.key === 'Enter') setSelected(c);
               }}
             >
+              <td className="rank-cell">
+                {ranks.has(c.id) ? `#${ranks.get(c.id)}` : <span className="muted" title="Not scored yet, so no rank">–</span>}
+              </td>
               <td>
                 <ScoreBadge score={c.score} />
               </td>
@@ -185,7 +246,12 @@ export function JobCandidatesTab() {
         </tbody>
       </table>
     </div>
-    <CandidateDetailsDialog candidate={selected} onClose={() => setSelected(null)} />
+    <CandidateDetailsDialog
+      candidate={selected}
+      rank={selected ? ranks.get(selected.id) : undefined}
+      rankedCount={scoredCount}
+      onClose={() => setSelected(null)}
+    />
     </>
   );
 }

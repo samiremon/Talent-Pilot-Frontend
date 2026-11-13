@@ -351,3 +351,55 @@ a.table__title:hover { color: var(--accent-text); }
 
 .details-dialog__header h2 { display: inline-flex; align-items: center; gap: 8px; }
 .link-button { border: 0; background: none; padding: 0; color: var(--accent-text); font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; }
+
+/* Candidates tab: search by name + "Show top N" + count, above the table. */
+.table-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.table-filters__search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 220px;
+  max-width: 320px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--border, #d0d5dd);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  color: var(--muted, #667085);
+}
+.table-filters__search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  padding: 0.5rem 0;
+  background: transparent;
+  color: var(--text, inherit);
+  font: inherit;
+}
+.table-filters__search:focus-within {
+  border-color: var(--accent, #4f46e5);
+}
+.table-filters__top {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.table-filters__count {
+  margin-left: auto;
+}
+/* "#1", "#2"… in the first column. */
+.rank-cell {
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.table__empty {
+  text-align: center;
+  padding: 1.5rem;
+}

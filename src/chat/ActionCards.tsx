@@ -5,7 +5,8 @@
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
  *   <AddCandidateCard> "Add candidate to JOB-0007": every field editable (e.g. fix an email
- *                    typo the AI pointed out), Confirm -> added + scored, with live progress
+ *                    typo the AI pointed out), Confirm -> added + scored, with live progress;
+ *                    when scoring is done the AI posts the score and rank in the chat
  *
  * Both use the same card look as the job card (dark header = "needs your input") and call
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
@@ -17,6 +18,7 @@ import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { remoteLabel } from '../format';
 import type { Job } from '../types';
+import type { ChatMessage } from './ChatPanel';
 import { LiveScoring } from './ImportCsvCard';
 import type { ActionCard, DecisionResult } from './JobCard';
 
@@ -232,7 +234,16 @@ const CANDIDATE_FIELDS = [
   { key: 'profileUrl', label: 'Profile link' },
 ] as const;
 
-export function AddCandidateCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+export function AddCandidateCard({
+  card,
+  onDecided,
+  onMessage,
+}: {
+  card: ActionCard;
+  onDecided: (r: DecisionResult) => void;
+  /** Gets the AI's "scored X/100, rank #N" message once scoring is done. */
+  onMessage?: (message: ChatMessage) => void;
+}) {
   const payload = card.payload as { jobId: string; jobCode?: string; title?: string; candidate: Record<string, string | null> };
   const [values, setValues] = useState<Record<string, string>>(() => ({
     name: payload.candidate.name ?? '',
@@ -305,7 +316,7 @@ export function AddCandidateCard({ card, onDecided }: { card: ActionCard; onDeci
         ) : (
           card.status === 'confirmed' && (
             <>
-              {result?.taskId && <LiveScoring jobId={payload.jobId} />}
+              {result?.taskId && <LiveScoring jobId={payload.jobId} cardId={card.id} taskId={result.taskId} onMessage={onMessage} />}
               <Link className="job-card__open" to={`/jobs/${payload.jobId}`}>
                 Open candidates →
               </Link>

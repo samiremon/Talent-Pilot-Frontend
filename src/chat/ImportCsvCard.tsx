@@ -8,10 +8,11 @@
  * the scoring progress live (same live updates as the job page).
  */
 import { Check, FileSpreadsheet, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useJobTasks } from '../useJobTasks';
+import type { ChatMessage } from './ChatPanel';
 import type { ActionCard, DecisionResult } from './JobCard';
 
 interface ImportPayload {
@@ -27,9 +28,41 @@ interface ImportPayload {
   preview: { name: string; headline: string | null }[];
 }
 
-/** Live scoring progress for the job, shown once the import is confirmed. */
-export function LiveScoring({ jobId }: { jobId: string }) {
+/**
+ * Live scoring progress for the job, shown once the card is confirmed.
+ *
+ * When THIS card's scoring task (taskId) has finished, it asks the server for the
+ * follow-up message ("Abir scored 72/100, rank #5 of 31…") and hands it to the chat via
+ * onMessage. The server posts that message only once per card; asking again (e.g. after
+ * a page reload) returns the same message, which the chat doesn't show twice.
+ */
+export function LiveScoring({
+  jobId,
+  cardId,
+  taskId,
+  onMessage,
+}: {
+  jobId: string;
+  cardId?: string;
+  taskId?: string | null;
+  onMessage?: (message: ChatMessage) => void;
+}) {
   const { latest } = useJobTasks(jobId);
+  const asked = useRef(false);
+  const finished = latest !== null && latest.id === taskId && (latest.status === 'done' || latest.status === 'failed');
+
+  useEffect(() => {
+    if (!finished || !cardId || !onMessage || asked.current) return;
+    asked.current = true;
+    api<{ message: ChatMessage }>(`/chat/actions/${cardId}/follow-up`, { method: 'POST', body: {} })
+      .then((data) => onMessage(data.message))
+      // 409 = still scoring (shouldn't happen once it's done); anything else: the
+      // progress line above still shows the result, so nothing is lost.
+      .catch(() => {
+        asked.current = false;
+      });
+  }, [finished, cardId, onMessage]);
+
   if (!latest) return <p className="job-card__hint">Starting AI scoring…</p>;
   const active = latest.status === 'queued' || latest.status === 'running';
   const percent = latest.progress.total ? Math.round((latest.progress.done / latest.progress.total) * 100) : 100;
@@ -48,7 +81,15 @@ export function LiveScoring({ jobId }: { jobId: string }) {
   );
 }
 
-export function ImportCsvCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+export function ImportCsvCard({
+  card,
+  onDecided,
+  onMessage,
+}: {
+  card: ActionCard;
+  onDecided: (r: DecisionResult) => void;
+  onMessage?: (message: ChatMessage) => void;
+}) {
   const p = card.payload as unknown as ImportPayload;
   const [busy, setBusy] = useState<'confirm' | 'cancel' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +177,7 @@ export function ImportCsvCard({ card, onDecided }: { card: ActionCard; onDecided
         ) : (
           card.status === 'confirmed' && (
             <>
-              {result?.taskId && <LiveScoring jobId={p.jobId} />}
+              {result?.taskId && <LiveScoring jobId={p.jobId} cardId={card.id} taskId={result.taskId} onMessage={onMessage} />}
               <Link className="job-card__open" to={`/jobs/${p.jobId}`}>
                 Open candidates →
               </Link>
