@@ -39,6 +39,16 @@ export function splitProfileText(text: string | null): { label: string; text: st
   return sections.filter((s) => s.text.trim());
 }
 
+/** Seniority as the AI read it from the profile; below the job's level caps the score. */
+const LEVEL_LABELS: Record<NonNullable<Candidate['level']>, string> = {
+  intern: 'Intern',
+  junior: 'Junior',
+  mid: 'Mid-level',
+  senior: 'Senior',
+  lead: 'Lead',
+  unknown: 'Unclear from the profile',
+};
+
 const SOURCE_LABELS: Record<Candidate['source'], string> = { csv: 'CSV upload', web: 'Web search', manual: 'Added by hand' };
 
 interface Props {
@@ -107,6 +117,12 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
               <div className="details-grid__item">
                 <dt>Rank</dt>
                 <dd>{rank ? `#${rank} of ${rankedCount} scored` : 'Not ranked yet (no score)'}</dd>
+              </div>
+            )}
+            {candidate.level && (
+              <div className="details-grid__item">
+                <dt>Level (AI's read)</dt>
+                <dd>{LEVEL_LABELS[candidate.level]}</dd>
               </div>
             )}
             <div className="details-grid__item">

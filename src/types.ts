@@ -58,6 +58,8 @@ export interface Candidate {
   evidence: string[];
   /** The profile tried to give the AI instructions (ignored). Shown in red. */
   flagged?: boolean;
+  /** Their seniority as the AI read it from their text (null = not scored yet). */
+  level?: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'unknown' | null;
   status: CandidateStatus;
   /** Everything we know about them as text: from the CSV ("summary: ...", "skills: ...") or a search snippet. */
   profileText: string | null;
