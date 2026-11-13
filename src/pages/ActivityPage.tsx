@@ -17,6 +17,7 @@ import { EmptyState, PageHeader } from '../components/PageParts';
 import { timeAgo, tokens } from '../format';
 import type { ActivityItem, Page, TokenDashboard, TokenTotals, TokenUsageItem } from '../types';
 import { useApi } from '../useApi';
+import { AiLimitsCard } from './AiLimitsCard';
 
 const TABS = [
   { to: '', label: 'Activity', icon: History },
@@ -188,6 +189,9 @@ export function TokenDashboardTab() {
 
   return (
     <>
+      {/* How much of the Groq limits (and your own budgets) is left. */}
+      <AiLimitsCard />
+
       <div className="card panel days-picker">
         <label htmlFor="days-input">Show tokens used in the last</label>
         <input

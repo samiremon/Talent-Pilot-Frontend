@@ -294,3 +294,24 @@ a.table__title:hover { color: var(--accent-text); }
 .table .row-actions { position: sticky; right: 0; background: var(--surface); width: 1%; padding-left: 8px; padding-right: 8px; }
 .row-link:hover td.row-actions, .row-link:focus-visible td.row-actions { background: var(--accent-weak); }
 .table thead th:last-child { position: sticky; right: 0; background: var(--surface); }
+
+/* ---------- "AI limits left" card ---------- */
+
+.limits-card { margin-bottom: 16px; display: grid; gap: 14px; }
+.limits-card__header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.limits-card .panel__title { margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.button--small { padding: 5px 10px; font-size: 12px; }
+.limits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.limits-model { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.limits-model__name { font-weight: 600; font-size: 13px; overflow-wrap: anywhere; }
+.limits-budgets { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.limit { display: grid; gap: 4px; }
+.limit__top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.limit__label { font-weight: 600; color: var(--text-2); }
+.limit__value { font-variant-numeric: tabular-nums; }
+.limit__track { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.limit__fill { display: block; height: 100%; border-radius: 999px; }
+.limit__fill--ok { background: var(--ok); }
+.limit__fill--warn { background: var(--warn); }
+.limit__fill--bad { background: var(--bad); }
+.limit__note { font-size: 11px; color: var(--muted); }
