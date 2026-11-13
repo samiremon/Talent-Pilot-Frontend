@@ -17,8 +17,10 @@ export const PIPELINE_STATUSES = [
   { id: 'hired', label: 'Hired' },
 ] as const satisfies readonly { id: CandidateStatus; label: string }[];
 
-/** Side exits: shown separately because they're not steps forward. */
+/** Side exits: shown separately because they're not steps forward.
+ *  Not accepted = the review decision; Rejected = after the interview. */
 export const EXIT_STATUSES = [
+  { id: 'not_accepted', label: 'Not accepted' },
   { id: 'not_interested', label: 'Not interested' },
   { id: 'rejected', label: 'Rejected' },
   { id: 'unsubscribed', label: 'Unsubscribed' },
@@ -34,13 +36,14 @@ export const STATUS_LABELS = Object.fromEntries(
  * still checks every move, so a stale copy can never let a wrong move through.
  */
 export const ALLOWED_MOVES: Record<CandidateStatus, readonly CandidateStatus[]> = {
-  sourced: ['accepted', 'rejected'],
-  accepted: ['contacted', 'rejected'],
-  contacted: ['replied', 'unsubscribed', 'rejected'],
-  replied: ['interested', 'not_interested', 'meeting_booked', 'unsubscribed', 'rejected'],
-  interested: ['meeting_booked', 'not_interested', 'unsubscribed', 'rejected'],
-  not_interested: ['interested', 'unsubscribed', 'rejected'],
-  meeting_booked: ['interviewed', 'unsubscribed', 'rejected'],
+  sourced: ['accepted', 'not_accepted'],
+  accepted: ['contacted', 'not_accepted'],
+  not_accepted: ['accepted'],
+  contacted: ['replied', 'unsubscribed'],
+  replied: ['interested', 'not_interested', 'meeting_booked', 'unsubscribed'],
+  interested: ['meeting_booked', 'not_interested', 'unsubscribed'],
+  not_interested: ['interested', 'unsubscribed'],
+  meeting_booked: ['interviewed', 'unsubscribed'],
   interviewed: ['shortlisted', 'unsubscribed', 'rejected'],
   shortlisted: ['hired', 'unsubscribed', 'rejected'],
   hired: [],

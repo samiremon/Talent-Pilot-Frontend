@@ -126,10 +126,10 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
                 <button
                   key={to}
                   type="button"
-                  className={`button button--small ${to === 'rejected' || to === 'unsubscribed' || to === 'not_interested' ? 'button--danger-ghost' : to === ALLOWED_MOVES[candidate.status][0] ? '' : 'button--ghost'}`}
+                  className={`button button--small ${to === 'rejected' || to === 'not_accepted' || to === 'unsubscribed' || to === 'not_interested' ? 'button--danger-ghost' : to === ALLOWED_MOVES[candidate.status][0] ? '' : 'button--ghost'}`}
                   onClick={() => onMove(candidate, to)}
                 >
-                  {to === 'accepted' ? 'Accept' : to === 'rejected' ? 'Reject' : STATUS_LABELS[to]}
+                  {to === 'accepted' ? 'Accept' : to === 'not_accepted' ? 'Not accepted' : to === 'rejected' ? 'Reject' : STATUS_LABELS[to]}
                 </button>
               ))}
             </div>

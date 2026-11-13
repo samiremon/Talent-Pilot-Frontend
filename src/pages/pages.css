@@ -109,7 +109,7 @@
   background: var(--accent-weak); color: var(--accent-text);
 }
 .chip-status--hired, .chip-status--interested, .chip-status--meeting_booked { background: var(--ok-bg); color: var(--ok); }
-.chip-status--rejected, .chip-status--unsubscribed, .chip-status--not_interested { background: var(--bad-bg); color: var(--bad); }
+.chip-status--rejected, .chip-status--not_accepted, .chip-status--unsubscribed, .chip-status--not_interested { background: var(--bad-bg); color: var(--bad); }
 .chip-status--sourced { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
 
 /* Who did it: Recruiter / AI / System. */

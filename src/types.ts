@@ -6,6 +6,7 @@
 export type CandidateStatus =
   | 'sourced'
   | 'accepted'
+  | 'not_accepted'
   | 'rejected'
   | 'contacted'
   | 'replied'

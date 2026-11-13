@@ -250,8 +250,8 @@ export function JobCandidatesTab() {
         <button type="button" className="button button--small" onClick={() => moveSelected('accepted')} disabled={status.busy}>
           <Check size={14} aria-hidden="true" /> Accept
         </button>
-        <button type="button" className="button button--small button--danger-ghost" onClick={() => moveSelected('rejected')} disabled={status.busy}>
-          <X size={14} aria-hidden="true" /> Reject
+        <button type="button" className="button button--small button--danger-ghost" onClick={() => moveSelected('not_accepted')} disabled={status.busy}>
+          <X size={14} aria-hidden="true" /> Not accepted
         </button>
         <label className="bulk-bar__move">
           Move to
