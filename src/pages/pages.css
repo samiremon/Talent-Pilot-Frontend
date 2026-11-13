@@ -152,3 +152,41 @@ a.table__title:hover { color: var(--accent-text); }
 .board__card { padding: 10px; margin-bottom: 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
 .board__card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .board__name { font-weight: 600; font-size: 13px; }
+
+/* ---------- Forms inside pages (New job, ...) ---------- */
+
+.job-form { padding: 24px; display: grid; gap: 18px; max-width: 900px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.form-row { display: grid; gap: 6px; align-content: start; }
+.form-row > label { font-size: 13px; font-weight: 600; }
+.form-row input, .form-row textarea, .form-row select {
+  padding: 9px 12px; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); width: 100%;
+}
+.form-row textarea { resize: vertical; line-height: 1.5; }
+.form-row [aria-invalid="true"] { border-color: var(--bad); }
+.form-hint { font-size: 12px; color: var(--muted); }
+.form-hint--error { color: var(--bad); }
+.form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Skills box: chips + a text field in one bordered box. */
+.tag-input {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  min-height: 40px; padding: 5px 8px;
+  border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
+}
+.tag-input:focus-within { border-color: var(--accent); box-shadow: var(--focus); }
+.tag-input__tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 4px 2px 8px; border-radius: 6px;
+  background: var(--accent-weak); color: var(--accent-text); font-size: 12px; font-weight: 600;
+}
+.tag-input__remove { display: grid; place-items: center; width: 18px; height: 18px; border: 0; border-radius: 4px; background: none; color: inherit; }
+.tag-input__remove:hover { background: rgba(0, 0, 0, 0.08); }
+.form-row .tag-input__field { flex: 1; min-width: 120px; border: 0; padding: 4px; background: transparent; outline: none; }
+.tag-input__field:focus-visible { box-shadow: none; }
+
+@media (max-width: 700px) {
+  .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .job-form { padding: 16px; }
+}

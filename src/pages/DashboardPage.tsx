@@ -4,7 +4,7 @@
  *   - the pipeline funnel: how many candidates are at each status
  *   - recent activity, and the latest jobs
  */
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { ActivityList, Funnel, LoadState } from '../components/DataParts';
@@ -19,7 +19,15 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title={`Welcome, ${user?.name ?? 'there'}`} subtitle="Your hiring at a glance." />
+      <PageHeader
+        title={`Welcome, ${user?.name ?? 'there'}`}
+        subtitle="Your hiring at a glance."
+        actions={
+          <Link to="/jobs/new" className="button">
+            <Plus size={16} aria-hidden="true" /> New job
+          </Link>
+        }
+      />
       <LoadState loading={loading && !data} error={error} />
 
       {data && (
@@ -53,7 +61,8 @@ export function DashboardPage() {
             </h2>
             {data.jobs.length === 0 ? (
               <EmptyState icon={Briefcase} title="No jobs yet">
-                Paste a job description into the chat on the right and TalentPilot will set it up for you.
+                Paste a job description into the chat on the right and TalentPilot will set it up for you, or{' '}
+                <Link to="/jobs/new">create one yourself</Link>.
               </EmptyState>
             ) : (
               <ul className="link-list">

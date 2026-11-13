@@ -1,7 +1,7 @@
 /**
  * Jobs list, from GET /api/jobs. Each row links to the job's page.
  */
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LoadState } from '../components/DataParts';
 import { EmptyState, PageHeader } from '../components/PageParts';
@@ -14,13 +14,22 @@ export function JobsPage() {
 
   return (
     <>
-      <PageHeader title="Jobs" subtitle="Every role you're hiring for." />
+      <PageHeader
+        title="Jobs"
+        subtitle="Every role you're hiring for."
+        actions={
+          <Link to="/jobs/new" className="button">
+            <Plus size={16} aria-hidden="true" /> New job
+          </Link>
+        }
+      />
       <LoadState loading={loading && !data} error={error} />
 
       {data && data.jobs.length === 0 && (
         <div className="card">
           <EmptyState icon={Briefcase} title="No jobs yet">
-            Paste a job description into the chat and TalentPilot will extract the details for you to confirm.
+            Paste a job description into the chat and TalentPilot will extract the details for you to confirm, or{' '}
+            <Link to="/jobs/new">create one yourself</Link>.
           </EmptyState>
         </div>
       )}

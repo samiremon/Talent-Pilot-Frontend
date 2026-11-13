@@ -7,6 +7,7 @@
  * Addresses (routes):
  *   /                      Dashboard
  *   /jobs                  Jobs list
+ *   /jobs/new              Create a job by hand
  *   /jobs/:jobId[/tab]     One job, with tabs (see pages/JobPage.tsx)
  *   /candidates            All candidates
  *   /outreach              Email campaigns
@@ -26,6 +27,7 @@ import {
 } from './pages/JobPage';
 import { LoginPage } from './pages/LoginPage';
 import { JobsPage } from './pages/JobsPage';
+import { NewJobPage } from './pages/NewJobPage';
 import { CandidatesPage, NotFoundPage, OutreachPage } from './pages/SimplePages';
 
 export function App() {
@@ -49,6 +51,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route index element={<DashboardPage />} />
         <Route path="jobs" element={<JobsPage />} />
+        <Route path="jobs/new" element={<NewJobPage />} />
         <Route path="jobs/:jobId" element={<JobPage />}>
           <Route index element={<JobCandidatesTab />} />
           <Route path="pipeline" element={<JobPipelineTab />} />

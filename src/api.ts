@@ -18,6 +18,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string,
     message: string,
+    /** Extra info, e.g. which form fields were invalid: [{ path, message }]. */
+    readonly details?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -57,8 +59,13 @@ export async function api<T = void>(path: string, { method = 'GET', body, signal
   const data: unknown = await res.json().catch(() => undefined);
 
   if (!res.ok) {
-    const error = (data as { error?: { code?: string; message?: string } } | undefined)?.error;
-    throw new ApiError(res.status, error?.code ?? 'HTTP_ERROR', error?.message ?? `Request failed (${res.status})`);
+    const error = (data as { error?: { code?: string; message?: string; details?: unknown } } | undefined)?.error;
+    throw new ApiError(
+      res.status,
+      error?.code ?? 'HTTP_ERROR',
+      error?.message ?? `Request failed (${res.status})`,
+      error?.details,
+    );
   }
   return data as T;
 }
