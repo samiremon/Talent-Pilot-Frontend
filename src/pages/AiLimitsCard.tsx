@@ -5,14 +5,12 @@
  *   - Requests left              e.g. 997 / 1,000 (99%)
  *   - Tokens left this minute    e.g. 7,923 / 8,000
  *   - Your AI calls in the last 24 h (from our own token log)
+ * (Optional token budgets from .env are still available from the API, just not shown here.)
  *
  * Important: Groq's limits are REFILLING BUCKETS, not daily counters. 1,000 requests a day
  * means one used request comes back every 86.4 s, so "requests left" stays near 1,000 unless
  * many requests are made in a short time. That's why we also show the real 24 h usage.
  *   - Tokens left today          our own count vs the daily limit from .env (if set)
- * Across all models:
- *   - This week / this month     usage, and % left of your own budget (if set in .env).
- *     Groq's free tier has no weekly or monthly limit, so without a budget we just say so.
  *
  * Bars are green above 50% left, amber from 20%, red below 20%.
  * "Check now" refreshes Groq's numbers with one tiny request per model.
@@ -85,23 +83,6 @@ function LimitBar({ label, meter, unit, note, hint }: { label: string; meter: Me
   );
 }
 
-/** Week/month: % left of your own budget, or just the usage when no budget is set. */
-function BudgetRow({ label, meter, envName }: { label: string; meter: Meter & { used: number }; envName: string }) {
-  if (meter.limit !== null) return <LimitBar label={label} meter={meter} unit="tokens" />;
-  return (
-    <div className="limit">
-      <div className="limit__top">
-        <span className="limit__label">{label}</span>
-        <span className="limit__value">{meter.used.toLocaleString()} tokens used</span>
-      </div>
-      <span className="limit__note">
-        Groq's free tier has no {label.toLowerCase().includes('week') ? 'weekly' : 'monthly'} limit. Set {envName} in .env for a
-        budget.
-      </span>
-    </div>
-  );
-}
-
 export function AiLimitsCard() {
   const { data, error, loading } = useApi<AiLimits>('/activity/ai-limits');
   const [fresh, setFresh] = useState<AiLimits | null>(null);
@@ -167,19 +148,9 @@ export function AiLimitsCard() {
                   note="Updates after this model's next AI call"
                   hint="Refills over each minute."
                 />
-                <LimitBar
-                  label="Tokens today"
-                  meter={m.tokensToday}
-                  unit="tokens"
-                  note={`${m.tokensToday.used.toLocaleString()} used · set AI_DAILY_TOKEN_LIMIT in .env to see % left`}
-                />
                 {m.updatedAt && <span className="limit__note">Groq numbers from {timeAgo(m.updatedAt)}</span>}
               </div>
             ))}
-          </div>
-          <div className="limits-budgets">
-            <BudgetRow label="This week (last 7 days)" meter={limits.week} envName="AI_TOKEN_BUDGET_WEEK" />
-            <BudgetRow label="This month (last 30 days)" meter={limits.month} envName="AI_TOKEN_BUDGET_MONTH" />
           </div>
         </>
       )}

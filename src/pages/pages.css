@@ -338,3 +338,13 @@ a.table__title:hover { color: var(--accent-text); }
 .task-progress--running .task-progress__track span, .task-progress--queued .task-progress__track span { background: var(--accent); }
 
 .limit__usage { font-size: 12px; color: var(--text-2); padding: 6px 8px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); }
+
+/* ---------- Candidate details popup ---------- */
+
+.candidate-head { display: flex; align-items: center; gap: 12px; }
+.candidate-head .score { min-width: 44px; height: 36px; font-size: 16px; }
+.candidate-reason { margin: 0 0 8px; }
+.candidate-evidence { display: grid; gap: 4px; }
+.details-description--short { max-height: 200px; }
+.board__card--link { cursor: pointer; transition: border-color 0.12s, background-color 0.12s; }
+.board__card--link:hover, .board__card--link:focus-visible { border-color: var(--accent); background: var(--accent-weak); outline: none; }

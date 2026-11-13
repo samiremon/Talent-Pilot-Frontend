@@ -57,6 +57,9 @@ export interface Candidate {
   scoreReason: string | null;
   evidence: string[];
   status: CandidateStatus;
+  /** Everything we know about them as text: from the CSV ("summary: ...", "skills: ...") or a search snippet. */
+  profileText: string | null;
+  createdAt: string;
 }
 
 export interface ActivityItem {

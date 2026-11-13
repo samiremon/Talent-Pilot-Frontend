@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
 import { JobDetailsDialog } from '../components/JobDetailsDialog';
+import { CandidateDetailsDialog } from '../components/CandidateDetailsDialog';
 import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
 import { useJobTasks, type JobTask } from '../useJobTasks';
@@ -107,6 +108,8 @@ function useJob(): JobContext {
 
 export function JobCandidatesTab() {
   const { job, candidates, latestTask } = useJob();
+  // The candidate whose details popup is open (null = closed).
+  const [selected, setSelected] = useState<Candidate | null>(null);
   const bar = <SourcingBar jobId={job.id} latest={latestTask} />;
   if (candidates.length === 0) {
     return (
@@ -114,8 +117,8 @@ export function JobCandidatesTab() {
         {bar}
         <div className="card">
           <EmptyState icon={Users} title="No candidates for this job yet">
-            Upload a CSV (try the sample one), or ask TalentPilot to find candidates. Each candidate gets a 0–100 score
-            with the reason and the evidence behind it.
+            Upload a CSV, or attach one in the chat with 📎. Each candidate gets a 0–100 score with the reason and the
+            evidence behind it.
           </EmptyState>
         </div>
       </>
@@ -136,7 +139,17 @@ export function JobCandidatesTab() {
         </thead>
         <tbody>
           {candidates.map((c) => (
-            <tr key={c.id}>
+            <tr
+              key={c.id}
+              className="row-link"
+              // The whole row opens the details popup (click, or Tab + Enter).
+              tabIndex={0}
+              aria-label={`Show details for ${c.name}`}
+              onClick={() => setSelected(c)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') setSelected(c);
+              }}
+            >
               <td>
                 <ScoreBadge score={c.score} />
               </td>
@@ -145,7 +158,7 @@ export function JobCandidatesTab() {
                 <div className="muted small">{orUnknown(c.headline)}</div>
                 <div className="small">
                   {c.profileUrl ? (
-                    <a href={c.profileUrl} target="_blank" rel="noreferrer noopener">
+                    <a href={c.profileUrl} target="_blank" rel="noreferrer noopener" onClick={(event) => event.stopPropagation()}>
                       Profile
                     </a>
                   ) : (
@@ -172,6 +185,7 @@ export function JobCandidatesTab() {
         </tbody>
       </table>
     </div>
+    <CandidateDetailsDialog candidate={selected} onClose={() => setSelected(null)} />
     </>
   );
 }
@@ -179,6 +193,7 @@ export function JobCandidatesTab() {
 /** Kanban board: one column per status, a card for each candidate in it. */
 export function JobPipelineTab() {
   const { candidates } = useJob();
+  const [selected, setSelected] = useState<Candidate | null>(null);
   const columns = [...PIPELINE_STATUSES, ...EXIT_STATUSES];
   return (
     <div className="board" role="list" aria-label="Pipeline board">
@@ -194,7 +209,17 @@ export function JobPipelineTab() {
               <div className="board__empty">No candidates</div>
             ) : (
               inColumn.map((c) => (
-                <article key={c.id} className="board__card">
+                <article
+                  key={c.id}
+                  className="board__card board__card--link"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Show details for ${c.name}`}
+                  onClick={() => setSelected(c)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') setSelected(c);
+                  }}
+                >
                   <div className="board__card-top">
                     <span className="board__name">{c.name}</span>
                     <ScoreBadge score={c.score} />
@@ -206,6 +231,7 @@ export function JobPipelineTab() {
           </section>
         );
       })}
+      <CandidateDetailsDialog candidate={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

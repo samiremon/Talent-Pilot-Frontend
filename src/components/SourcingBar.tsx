@@ -1,18 +1,17 @@
 /**
  * The bar above a job's candidates:
  *
- *   [ Upload CSV ]  [ Score again ]                  (live) Scoring… 15 of 23  ▓▓▓▓░░
+ *   [ Upload CSV ]                                   (live) Scoring… 15 of 23  ▓▓▓▓░░
  *
  * - Upload CSV: pick a .csv file -> candidates are added (duplicates skipped) and AI
  *   scoring starts in the background automatically. A short summary is shown.
- * - Score again: scores everyone who doesn't have a score yet (e.g. after a hiccup).
  * - The progress line updates live while the background worker scores.
  *
  * These call the same backend functions the AI will use from the chat.
  */
-import { FileUp, Sparkles } from 'lucide-react';
+import { FileUp } from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
-import { API_BASE, ApiError, api } from '../api';
+import { API_BASE, ApiError } from '../api';
 import type { JobTask } from '../useJobTasks';
 import { notifyDataChanged } from '../useApi';
 
@@ -25,7 +24,7 @@ interface UploadResult {
 
 export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask | null }) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState<'upload' | 'score' | null>(null);
+  const [busy, setBusy] = useState<'upload' | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const active = latest && (latest.status === 'queued' || latest.status === 'running');
 
@@ -54,18 +53,6 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
     }
   }
 
-  async function scoreAgain() {
-    setBusy('score');
-    setNotice(null);
-    try {
-      await api(`/jobs/${jobId}/score`, { method: 'POST' });
-    } catch (err) {
-      setNotice({ ok: false, text: err instanceof ApiError ? err.message : 'Could not start scoring.' });
-    } finally {
-      setBusy(null);
-    }
-  }
-
   const percent =
     latest && latest.progress.total > 0 ? Math.round((latest.progress.done / latest.progress.total) * 100) : latest?.status === 'done' ? 100 : 0;
 
@@ -76,12 +63,6 @@ export function SourcingBar({ jobId, latest }: { jobId: string; latest: JobTask 
         <button type="button" className="button" onClick={() => fileRef.current?.click()} disabled={busy !== null}>
           <FileUp size={16} aria-hidden="true" /> {busy === 'upload' ? 'Uploading…' : 'Upload CSV'}
         </button>
-        <button type="button" className="button button--ghost" onClick={scoreAgain} disabled={busy !== null || Boolean(active)}>
-          <Sparkles size={16} aria-hidden="true" /> Score again
-        </button>
-        <a className="sourcing-bar__sample" href="https://github.com/samiremon/Talent-Pilot-Backend/blob/main/samples/candidates.csv" target="_blank" rel="noreferrer noopener">
-          Sample CSV
-        </a>
       </div>
 
       {latest && (
