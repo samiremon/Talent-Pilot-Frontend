@@ -29,6 +29,9 @@ import { RichText } from './RichText';
 import type { ChatMode } from './useChatPanel';
 import './chat.css';
 
+/** Longest message the AI accepts (the backend checks the same number). */
+const MAX_MESSAGE_CHARS = 12_000;
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -131,7 +134,7 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
 
   async function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || thinking) return;
+    if (!trimmed || thinking || trimmed.length > MAX_MESSAGE_CHARS) return;
     setDraft('');
 
     // Show the recruiter's message immediately (temporary id until the server saves it).
@@ -178,6 +181,9 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
   }
 
   // Enter sends; Shift+Enter makes a new line (like most chat apps).
+  // Same limit as the server (about 4 pages): keeps each AI call inside Groq's per-minute budget.
+  const tooLong = draft.trim().length > MAX_MESSAGE_CHARS;
+
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -333,11 +339,18 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button type="submit" className="chat__send" disabled={!draft.trim() || thinking} aria-label="Send message">
+          <button type="submit" className="chat__send" disabled={!draft.trim() || thinking || tooLong} aria-label="Send message">
             <Send size={16} />
           </button>
         </form>
-        <p className="chat__hint">TalentPilot asks before any action that changes data or sends email.</p>
+        {tooLong ? (
+          <p className="chat__hint chat__hint--error" role="alert">
+            Too long for the AI: {draft.trim().length.toLocaleString()} / {MAX_MESSAGE_CHARS.toLocaleString()} characters. Please
+            shorten it (e.g. paste only the job description).
+          </p>
+        ) : (
+          <p className="chat__hint">TalentPilot asks before any action that changes data or sends email.</p>
+        )}
       </div>
     </aside>
   );
