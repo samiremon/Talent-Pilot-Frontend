@@ -1,8 +1,11 @@
 /**
  * Top of the app.
  *   1. While we ask the backend who's logged in -> "Loading…"
- *   2. Not logged in -> the login page (whatever address you opened)
+ *   2. Not logged in -> the signed-out pages:
+ *        /login  /signup  /forgot-password  /reset-password?token=...
+ *      (any other address goes to /login)
  *   3. Logged in -> the app frame (AppShell) with the page for the current address
+ *      (/login and /signup then just go to the dashboard)
  *
  * Addresses (routes):
  *   /                      Dashboard
@@ -11,9 +14,10 @@
  *   /jobs/:jobId[/tab]     One job, with tabs (see pages/JobPage.tsx)
  *   /candidates            All candidates
  *   /outreach              Email campaigns
+ *   /profile               Change your name / password
  *   anything else          "Page not found"
  */
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { AppShell } from './layout/AppShell';
 import { DashboardPage } from './pages/DashboardPage';
@@ -26,6 +30,9 @@ import {
   JobRepliesTab,
 } from './pages/JobPage';
 import { LoginPage } from './pages/LoginPage';
+import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordResetPages';
+import { ProfilePage } from './pages/ProfilePage';
+import { SignupPage } from './pages/SignupPage';
 import { JobsPage } from './pages/JobsPage';
 import { NewJobPage } from './pages/NewJobPage';
 import { CandidatesPage, NotFoundPage, OutreachPage } from './pages/SimplePages';
@@ -43,10 +50,27 @@ export function App() {
     );
   }
 
-  if (status === 'signed-out') return <LoginPage />;
+  if (status === 'signed-out') {
+    return (
+      <Routes>
+        <Route path="login" element={<LoginPage />} />
+        <Route path="signup" element={<SignupPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
+        {/* Anything else (including "/") -> log in. */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
+      {/* Already logged in: these pages make no sense, go to the dashboard. */}
+      <Route path="login" element={<Navigate to="/" replace />} />
+      <Route path="signup" element={<Navigate to="/" replace />} />
+      <Route path="forgot-password" element={<Navigate to="/" replace />} />
+      {/* A reset link opened while logged in still works. */}
+      <Route path="reset-password" element={<ResetPasswordPage />} />
       {/* Every page below is shown inside the app frame (top bar, sidebar, chat). */}
       <Route element={<AppShell />}>
         <Route index element={<DashboardPage />} />
@@ -61,6 +85,7 @@ export function App() {
         </Route>
         <Route path="candidates" element={<CandidatesPage />} />
         <Route path="outreach" element={<OutreachPage />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

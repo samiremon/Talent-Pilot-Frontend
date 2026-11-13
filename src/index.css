@@ -200,3 +200,44 @@ a { color: var(--accent-text); }
   color: #fff;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.45);
 }
+
+/* ---------- Signed-out pages (login, sign up, reset) ---------- */
+
+.auth-card .form { margin-bottom: 16px; }
+.auth-card > .button { width: 100%; }
+.button--google { width: 100%; gap: 10px; background: var(--surface); color: var(--text); border-color: var(--border-strong); }
+.button--google:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border-strong); }
+
+/* "or" line between Google and the email form. */
+.divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--muted); font-size: 12px; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+.field__row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.field__link { font-size: 12px; font-weight: 500; }
+.field__error { font-size: 12px; font-weight: 500; color: var(--bad); }
+.field__hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+.field input[aria-invalid="true"], .password-input input[aria-invalid="true"] { border-color: var(--bad); }
+
+.form-notice {
+  margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; text-align: left;
+  background: var(--ok-bg); color: var(--ok); font-size: 0.875rem;
+}
+.form-notice p { margin: 0 0 6px; }
+.form-notice p:last-child { margin: 0; }
+.form-notice .muted { color: var(--text-2); }
+.auth-switch { margin: 0 0 16px; font-size: 0.875rem; color: var(--muted); }
+
+/* Password box with a Show/Hide eye button inside it. */
+.password-input { position: relative; display: block; }
+.password-input input { width: 100%; padding-right: 40px; }
+.password-input__toggle {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; display: grid; place-items: center;
+  border: 0; border-radius: 6px; background: none; color: var(--muted);
+}
+.password-input__toggle:hover { color: var(--text); background: var(--surface-2); }
+.field .password-input input {
+  font-weight: 400; padding: 10px 40px 10px 12px;
+  border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
+}
+.field label { font-size: 0.875rem; font-weight: 600; }

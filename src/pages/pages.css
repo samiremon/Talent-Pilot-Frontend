@@ -198,3 +198,12 @@ a.table__title:hover { color: var(--accent-text); }
   background: var(--accent-weak); color: var(--text);
 }
 .ai-fill__removed { margin-top: 4px; color: var(--warn); }
+
+/* ---------- Profile ---------- */
+
+.profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; max-width: 900px; }
+.form-stack { display: grid; gap: 14px; }
+.form-stack .panel__title { margin: 0; }
+.plain-list { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.form-row .password-input input { padding-right: 40px; }
+@media (max-width: 800px) { .profile-grid { grid-template-columns: minmax(0, 1fr); } }

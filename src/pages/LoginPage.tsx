@@ -1,18 +1,20 @@
 /**
- * The login screen: email + password form.
+ * The login screen (/login).
  *
- * On submit it calls login() from AuthContext. If that works, the app switches to the
- * home screen on its own (App.tsx watches the auth status). If it fails, the backend's
- * message ("Email or password is incorrect", "Too many login attempts...") is shown.
+ * - Email + password, with a Show/Hide button on the password
+ * - "Continue with Google" (only when the server has Google set up)
+ * - "Forgot password?" and "Create an account" links
+ * - Demo helper: if the backend has DEMO_LOGIN_ENABLED=true, a "Use demo account" button
+ *   fills in the demo recruiter's email and password.
+ * - If Google sends the user back with an error (?error=...), it's shown here.
  *
- * Demo helper: if the backend has DEMO_LOGIN_ENABLED=true, a "Use demo account" button
- * appears and fills in the recruiter's email and password from the backend's .env.
+ * On success the app switches to the dashboard by itself (App.tsx watches the login status).
  */
-import { Send } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth/AuthContext';
-import { BackendStatus } from '../components/BackendStatus';
+import { AuthLayout, Divider, GoogleButton, PasswordInput, friendlyAuthError, useProviders } from '../auth/AuthParts';
 
 /** What GET /api/auth/demo returns when demo login is on. */
 interface DemoCredentials {
@@ -22,10 +24,15 @@ interface DemoCredentials {
 
 export function LoginPage() {
   const { login } = useAuth();
+  const providers = useProviders();
+  const [params] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // Errors from the Google redirect (?error=google_...) or from a failed login.
+  const [error, setError] = useState<string | null>(() => friendlyAuthError(params.get('error')));
   const [submitting, setSubmitting] = useState(false);
+  // Shown after a password reset: "Your password was changed".
+  const notice = params.get('reset') === 'done' ? 'Your password was changed. Please log in with the new one.' : null;
   // The demo account, if the backend offers one (DEMO_LOGIN_ENABLED=true in its .env).
   const [demo, setDemo] = useState<DemoCredentials | null>(null);
 
@@ -54,7 +61,7 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      // Success: nothing else to do here, App.tsx shows the home page.
+      // Success: nothing else to do here, App.tsx shows the dashboard.
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
       setSubmitting(false);
@@ -62,63 +69,77 @@ export function LoginPage() {
   }
 
   return (
-    <main className="auth-page">
-      <section className="card auth-card" aria-labelledby="login-title">
-        <span className="logo-tile auth-logo" aria-hidden="true">
-          <Send size={16} />
-        </span>
-        <h1 id="login-title" className="auth-title">
-          TalentPilot
-        </h1>
-        <p className="tagline">Your AI recruiting co-worker, from job description to hire.</p>
+    <AuthLayout title="TalentPilot" subtitle="Your AI recruiting co-worker, from job description to hire.">
+      {notice && (
+        <p className="form-notice" role="status">
+          {notice}
+        </p>
+      )}
 
-        <form className="form" onSubmit={handleSubmit} noValidate>
-          <label className="field">
-            <span>Email</span>
-            <input
-              type="email"
-              name="email"
-              autoComplete="username"
-              required
-              autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
+      {providers?.google && (
+        <>
+          <GoogleButton />
+          <Divider />
+        </>
+      )}
 
-          <label className="field">
-            <span>Password</span>
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
+      <form className="form" onSubmit={handleSubmit} noValidate>
+        <label className="field">
+          <span>Email</span>
+          <input
+            type="email"
+            name="email"
+            autoComplete="username"
+            required
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
 
-          {/* role="alert" makes screen readers read the error out immediately. */}
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
+        <div className="field">
+          <span className="field__row">
+            <label htmlFor="login-password">Password</label>
+            {providers?.passwordReset !== false && (
+              <Link to="/forgot-password" className="field__link">
+                Forgot password?
+              </Link>
+            )}
+          </span>
+          <PasswordInput
+            id="login-password"
+            name="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
 
-          <button type="submit" className="button" disabled={submitting || !email || !password}>
-            {submitting ? 'Signing in…' : 'Sign in'}
+        {/* role="alert" makes screen readers read the error out immediately. */}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        <button type="submit" className="button" disabled={submitting || !email || !password}>
+          {submitting ? 'Signing in…' : 'Sign in'}
+        </button>
+
+        {/* Only shown when the backend has demo login switched on. */}
+        {demo && (
+          <button type="button" className="button button--ghost" onClick={fillDemoAccount} disabled={submitting}>
+            Use demo account
           </button>
+        )}
+      </form>
 
-          {/* Only shown when the backend has demo login switched on. */}
-          {demo && (
-            <button type="button" className="button button--ghost" onClick={fillDemoAccount} disabled={submitting}>
-              Use demo account
-            </button>
-          )}
-        </form>
-
-        <BackendStatus />
-      </section>
-    </main>
+      {providers?.signup !== false && (
+        <p className="auth-switch">
+          New here? <Link to="/signup">Create an account</Link>
+        </p>
+      )}
+    </AuthLayout>
   );
 }

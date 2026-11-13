@@ -1,9 +1,9 @@
 /**
  * The dark bar across the top: menu button (phones only), logo, and the account menu.
  */
-import { ChevronDown, LogOut, Menu, Send } from 'lucide-react';
+import { ChevronDown, LogOut, Menu, Send, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 interface TopBarProps {
@@ -24,6 +24,7 @@ function initials(name: string): string {
 
 export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +85,16 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
               {user?.name}
               <small>{user?.email}</small>
             </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                navigate('/profile');
+              }}
+            >
+              <UserRound size={14} aria-hidden="true" /> Profile
+            </button>
             <button type="button" role="menuitem" onClick={() => void logout()}>
               <LogOut size={14} aria-hidden="true" /> Sign out
             </button>
