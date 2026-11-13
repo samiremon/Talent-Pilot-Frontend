@@ -4,6 +4,10 @@
  * Per Groq model (live, from Groq's own answers):
  *   - Requests left              e.g. 997 / 1,000 (99%)
  *   - Tokens left this minute    e.g. 7,923 / 8,000
+ *   - Daily tokens               exactly what Groq last said: "Available" (Groq accepted a
+ *                                call) or "Used up: 199,135 of 200,000 · frees up in 16 min"
+ *                                (Groq's own refusal). Groq doesn't send a "tokens left today"
+ *                                number, so we don't show one (no estimates).
  *   - Your AI calls in the last 24 h (from our own token log)
  * (Optional token budgets from .env are still available from the API, just not shown here.)
  *
@@ -41,6 +45,14 @@ interface AiLimits {
     requestsToday: Meter;
     tokensPerMinute: Meter;
     tokensToday: Meter & { used: number };
+    dailyTokens: {
+      status: 'available' | 'used_up' | 'unknown';
+      lastOkAt: string | null;
+      limit: number | null;
+      used: number | null;
+      refusedAt: string | null;
+      freesAt: string | null;
+    };
   }[];
   week: Meter & { used: number };
   month: Meter & { used: number };
@@ -79,6 +91,51 @@ function LimitBar({ label, meter, unit, note, hint }: { label: string; meter: Me
         <span className={`limit__fill limit__fill--${level}`} style={{ width: `${meter.percentLeft}%` }} />
       </div>
       {hint && <span className="limit__note">{hint}</span>}
+    </div>
+  );
+}
+
+/** "in about 16 min" / "at 18:42" for when Groq said the daily limit frees up. */
+function freesUpText(freesAt: string): string {
+  const ms = new Date(freesAt).getTime() - Date.now();
+  if (ms <= 0) return 'Groq said it would be free again by now: press Check now to confirm';
+  const min = Math.ceil(ms / 60_000);
+  return `Groq says it frees up in about ${min < 90 ? `${min} min` : `${Math.round(min / 60)} h`} (at ${new Date(freesAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
+}
+
+/** The daily token limit, exactly as Groq last reported it. */
+function DailyTokens({ daily }: { daily: AiLimits['models'][number]['dailyTokens'] }) {
+  const limitText = daily.limit ? `${daily.limit.toLocaleString()} tokens a day` : null;
+  return (
+    <div className="limit">
+      <div className="limit__top">
+        <span className="limit__label">Daily tokens</span>
+        {daily.status === 'used_up' ? (
+          <span className="limit__value limit__value--bad">
+            <strong>Used up</strong>
+            {daily.used !== null && daily.limit !== null && (
+              <>
+                {' '}
+                · {daily.used.toLocaleString()} of {daily.limit.toLocaleString()} used
+              </>
+            )}
+          </span>
+        ) : daily.status === 'available' ? (
+          <span className="limit__value limit__value--ok">
+            <strong>Available</strong>
+          </span>
+        ) : (
+          <span className="limit__value muted">No answer from Groq yet</span>
+        )}
+      </div>
+      <span className="limit__note">
+        {daily.status === 'used_up' && daily.freesAt
+          ? `${freesUpText(daily.freesAt)}.`
+          : daily.status === 'available' && daily.lastOkAt
+            ? `Groq accepted a call ${timeAgo(daily.lastOkAt)}${limitText ? ` · limit ${limitText} (from Groq)` : ''}.`
+            : 'Press Check now to ask Groq.'}{' '}
+        Groq only reports this number when the limit is reached, so there's no "% left" here.
+      </span>
     </div>
   );
 }
@@ -148,6 +205,7 @@ export function AiLimitsCard() {
                   note="Updates after this model's next AI call"
                   hint="Refills over each minute."
                 />
+                <DailyTokens daily={m.dailyTokens} />
                 {m.updatedAt && <span className="limit__note">Groq numbers from {timeAgo(m.updatedAt)}</span>}
               </div>
             ))}

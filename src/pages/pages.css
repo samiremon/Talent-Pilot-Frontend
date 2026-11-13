@@ -442,3 +442,7 @@ a.table__title:hover { color: var(--accent-text); }
 }
 .button.button--danger-ghost { background: transparent; border-color: var(--bad); color: var(--bad); }
 .button.button--danger-ghost:hover:not(:disabled) { background: var(--bad-bg); }
+
+/* Daily tokens row on the Remaining usage card: status word in green / red. */
+.limit__value--ok strong { color: var(--ok); }
+.limit__value--bad strong { color: var(--bad); }
