@@ -16,7 +16,9 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
 import { JobDetailsDialog } from '../components/JobDetailsDialog';
+import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
+import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown } from '../format';
 import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
@@ -35,6 +37,8 @@ const TABS = [
 interface JobContext {
   job: Job;
   candidates: Candidate[];
+  /** The newest background task (e.g. scoring), updated live. */
+  latestTask: JobTask | null;
 }
 
 export function JobPage() {
@@ -44,6 +48,8 @@ export function JobPage() {
   // hooks always run in the same order.)
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
+  // Live background-task progress for this job (Server-Sent Events).
+  const { latest: latestTask } = useJobTasks(jobRequest.data?.job.id);
   // After deleting, this page has nothing to show: go back to the list.
   const deleteJob = useDeleteJob({ onDeleted: () => navigate('/jobs') });
   const candidatesRequest = useApi<{ candidates: Candidate[] }>(`/jobs/${jobId}/candidates`);
@@ -90,7 +96,7 @@ export function JobPage() {
 
       <LoadState loading={candidatesRequest.loading && !candidatesRequest.data} error={candidatesRequest.error} />
       {/* The selected tab's component is shown here, with the job + candidates handed down. */}
-      <Outlet context={{ job, candidates } satisfies JobContext} />
+      <Outlet context={{ job, candidates, latestTask } satisfies JobContext} />
     </>
   );
 }
@@ -100,18 +106,24 @@ function useJob(): JobContext {
 }
 
 export function JobCandidatesTab() {
-  const { candidates } = useJob();
+  const { job, candidates, latestTask } = useJob();
+  const bar = <SourcingBar jobId={job.id} latest={latestTask} />;
   if (candidates.length === 0) {
     return (
-      <div className="card">
-        <EmptyState icon={Users} title="No candidates for this job yet">
-          Ask TalentPilot to start searching, or upload a CSV. Each candidate gets a 0–100 score with the reason and
-          the evidence behind it.
-        </EmptyState>
-      </div>
+      <>
+        {bar}
+        <div className="card">
+          <EmptyState icon={Users} title="No candidates for this job yet">
+            Upload a CSV (try the sample one), or ask TalentPilot to find candidates. Each candidate gets a 0–100 score
+            with the reason and the evidence behind it.
+          </EmptyState>
+        </div>
+      </>
     );
   }
   return (
+    <>
+    {bar}
     <div className="card table-wrap">
       <table className="table">
         <thead>
@@ -160,6 +172,7 @@ export function JobCandidatesTab() {
         </tbody>
       </table>
     </div>
+    </>
   );
 }
 

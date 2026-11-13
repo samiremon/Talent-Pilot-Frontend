@@ -315,3 +315,24 @@ a.table__title:hover { color: var(--accent-text); }
 .limit__fill--warn { background: var(--warn); }
 .limit__fill--bad { background: var(--bad); }
 .limit__note { font-size: 11px; color: var(--muted); }
+
+/* ---------- Sourcing bar (Upload CSV / Score again / live progress) ---------- */
+
+.sourcing-bar { display: grid; gap: 10px; margin-bottom: 14px; }
+.sourcing-bar__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sourcing-bar__sample { font-size: 12px; margin-left: 4px; }
+.sourcing-bar__notice { margin: 0; }
+.task-progress {
+  display: grid; gap: 6px; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); font-size: 13px;
+}
+.task-progress--running, .task-progress--queued { border-color: var(--accent); background: var(--accent-weak); }
+.task-progress--done { border-color: transparent; background: var(--ok-bg); color: var(--ok); }
+.task-progress--failed { border-color: transparent; background: var(--bad-bg); color: var(--bad); }
+.task-progress__text { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.task-progress__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 1s infinite ease-in-out; }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .task-progress__dot { animation: none; } }
+.task-progress__track { display: block; height: 6px; border-radius: 999px; background: rgba(0, 0, 0, 0.08); overflow: hidden; }
+.task-progress__track span { display: block; height: 100%; background: currentColor; border-radius: 999px; transition: width 0.3s; }
+.task-progress--running .task-progress__track span, .task-progress--queued .task-progress__track span { background: var(--accent); }
