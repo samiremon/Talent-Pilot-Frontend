@@ -20,13 +20,15 @@ import { CandidateDetailsDialog } from '../components/CandidateDetailsDialog';
 import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { api } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown, profileSite } from '../format';
 import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
 import { rankCandidates } from '../ranking';
 import type { ActivityItem, Candidate, Job } from '../types';
-import { useApi } from '../useApi';
+import { notifyDataChanged, useApi } from '../useApi';
 
 const TABS = [
   { to: '', label: 'Candidates' },
@@ -135,6 +137,8 @@ export function JobCandidatesTab() {
 
   // Remove a candidate (trash button / popup), with a confirmation popup first.
   const deleteCandidate = useDeleteCandidate(job.id, { onDeleted: () => setSelected(null) });
+  // "Delete all": removes every candidate of this job (asks first; the job stays).
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   // No score AND no reason = the AI hasn't scored them yet (e.g. a run hit a problem).
   const unscored = candidates.filter((c) => c.score === null && !c.scoreReason).length;
@@ -180,7 +184,28 @@ export function JobCandidatesTab() {
       <span className="muted small table-filters__count">
         Showing {shown.length} of {candidates.length} · {scoredCount} scored
       </span>
+      <button type="button" className="button button--danger-ghost button--small" onClick={() => setConfirmDeleteAll(true)}>
+        <Trash2 size={14} aria-hidden="true" /> Delete all
+      </button>
     </div>
+    <ConfirmDialog
+      open={confirmDeleteAll}
+      danger
+      title={`Delete all ${candidates.length} candidate${candidates.length === 1 ? '' : 's'} of ${job.jobCode ?? 'this job'}?`}
+      confirmLabel="Delete all candidates"
+      onCancel={() => setConfirmDeleteAll(false)}
+      onConfirm={async () => {
+        await api(`/jobs/${job.id}/candidates`, { method: 'DELETE' });
+        setConfirmDeleteAll(false);
+        notifyDataChanged();
+      }}
+    >
+      <p>
+        Every candidate of <strong>{job.title}</strong> will be removed: <strong>{candidates.length}</strong> people, with their
+        scores. The job itself stays.
+      </p>
+      <p className="muted">This can't be undone. The activity log keeps a note of it.</p>
+    </ConfirmDialog>
     <div className="card table-wrap">
       <table className="table">
         <thead>
