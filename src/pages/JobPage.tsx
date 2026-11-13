@@ -21,6 +21,7 @@ import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { Segmented } from '../components/Segmented';
 import { api } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
@@ -176,25 +177,22 @@ export function JobCandidatesTab() {
           aria-label="Search candidates by name"
         />
       </label>
-      <label className="table-filters__top">
-        Show
-        <select value={top} onChange={(e) => setTop(Number(e.target.value))} aria-label="Show the top candidates">
-          <option value={0}>All candidates</option>
-          {TOP_CHOICES.map((n) => (
-            <option key={n} value={n}>
-              Top {n}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="table-filters__top">
-        Email
-        <select value={emailFilter} onChange={(e) => setEmailFilter(e.target.value as typeof emailFilter)} aria-label="Filter by email">
-          <option value="all">All</option>
-          <option value="found">Found ({withEmail})</option>
-          <option value="missing">Missing ({candidates.length - withEmail})</option>
-        </select>
-      </label>
+      <Segmented
+        label="Show"
+        value={top}
+        onChange={setTop}
+        options={[{ value: 0, label: 'All' }, ...TOP_CHOICES.map((n) => ({ value: n, label: `Top ${n}` }))]}
+      />
+      <Segmented
+        label="Email"
+        value={emailFilter}
+        onChange={setEmailFilter}
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'found', label: 'Found', count: withEmail },
+          { value: 'missing', label: 'Missing', count: candidates.length - withEmail },
+        ]}
+      />
       <span className="muted small table-filters__count">
         Showing {shown.length} of {candidates.length} · {scoredCount} scored
       </span>

@@ -56,7 +56,6 @@ interface ChatPanelProps {
 type AiStatus = 'loading' | 'groq' | 'mock' | 'offline';
 
 // Ideas shown above the input box, to help a first-time user get started.
-const SUGGESTIONS = ['What can you do?', 'How are my jobs going?', 'Show the candidates for this job'];
 
 export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, context, jobId }: ChatPanelProps) {
   const { user } = useAuth();
@@ -280,13 +279,6 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
       </div>
 
       <div className="chat__composer">
-        <div className="chat__suggestions">
-          {SUGGESTIONS.map((suggestion) => (
-            <button key={suggestion} type="button" className="chip" onClick={() => void send(suggestion)} disabled={thinking}>
-              {suggestion}
-            </button>
-          ))}
-        </div>
         {/* "Which job is this CSV for?" (only when the file was chosen outside a job page). */}
         {pendingFile && (
           <div className="attach-picker" role="group" aria-label="Choose the job for this CSV">
@@ -337,7 +329,7 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
             id="chat-input"
             className="chat__input"
             rows={1}
-            placeholder="Ask TalentPilot, or paste a job description…"
+            placeholder="Ask TalentPilot"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={handleKeyDown}
@@ -346,13 +338,12 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
             <Send size={16} />
           </button>
         </form>
-        {tooLong ? (
+        {/* Only shown when needed: the message is too long for the AI. */}
+        {tooLong && (
           <p className="chat__hint chat__hint--error" role="alert">
             Too long for the AI: {draft.trim().length.toLocaleString()} / {MAX_MESSAGE_CHARS.toLocaleString()} characters. Please
             shorten it (e.g. paste only the job description).
           </p>
-        ) : (
-          <p className="chat__hint">TalentPilot asks before any action that changes data or sends email.</p>
         )}
       </div>
     </aside>

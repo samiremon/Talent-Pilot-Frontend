@@ -464,3 +464,53 @@ a.table__title:hover { color: var(--accent-text); }
 /* "Score N unscored": amber, so it stands out as something that needs attention. */
 .button.button--warn { background: var(--warn-bg, #fef3c7); border-color: var(--warn, #b45309); color: var(--warn, #b45309); }
 .button.button--warn:hover:not(:disabled) { filter: brightness(0.96); }
+
+/* Segmented control ("Show: All | Top 5 | …", "Email: All | Found | Missing"):
+   a light track with the chosen option raised in white, accent-coloured text. */
+.segmented-field { display: inline-flex; align-items: center; gap: 8px; }
+.segmented-field__label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.segmented__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s, color 0.12s, box-shadow 0.12s;
+}
+.segmented__option:hover { color: var(--text); background: var(--accent-weak); }
+.segmented__option:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.segmented__option--active,
+.segmented__option--active:hover {
+  background: var(--surface);
+  color: var(--accent-text);
+  font-weight: 600;
+  box-shadow: var(--shadow), 0 0 0 1px var(--border);
+}
+.segmented__count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--text-2);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.segmented__option--active .segmented__count { background: var(--accent-weak); color: var(--accent-text); }
