@@ -11,7 +11,7 @@
  * This component loads the job and its candidates ONCE and hands them to whichever tab
  * is open (through react-router's "outlet context"), so switching tabs is instant.
  */
-import { ExternalLink, History, Inbox, Info, Mail, Pencil, Search, Trash2, Users } from 'lucide-react';
+import { Check, ExternalLink, History, Inbox, Info, Mail, Pencil, Search, Trash2, Users, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
@@ -20,6 +20,7 @@ import { CandidateDetailsDialog } from '../components/CandidateDetailsDialog';
 import { SourcingBar } from '../components/SourcingBar';
 import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
+import { useStatusChange } from '../components/useStatusChange';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Segmented, TopPicker } from '../components/Segmented';
 import { EditContactDialog } from '../components/EditContactDialog';
@@ -27,9 +28,9 @@ import { api } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
 import { orUnknown, profileSite } from '../format';
-import { EXIT_STATUSES, PIPELINE_STATUSES } from '../pipeline';
+import { ALL_STATUSES, EXIT_STATUSES, PIPELINE_STATUSES, STATUS_LABELS } from '../pipeline';
 import { rankCandidates } from '../ranking';
-import type { ActivityItem, Candidate, Job } from '../types';
+import type { ActivityItem, Candidate, CandidateStatus, Job } from '../types';
 import { notifyDataChanged, useApi } from '../useApi';
 
 const TABS = [
@@ -144,6 +145,20 @@ export function JobCandidatesTab() {
   const deleteCandidate = useDeleteCandidate(job.id, { onDeleted: () => setSelected(null) });
   // "Delete all": removes every candidate of this job (asks first; the job stays).
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  // Review & status changes: ticked rows, and the Accept / Reject / Move to actions.
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const status = useStatusChange(job.id);
+  const togglePick = (id: string) =>
+    setPicked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  async function moveSelected(to: CandidateStatus) {
+    await status.move([...picked], to);
+    setPicked(new Set());
+  }
   // The candidate whose email / profile link is being edited (null = closed).
   const [editing, setEditing] = useState<Candidate | null>(null);
 
@@ -213,10 +228,49 @@ export function JobCandidatesTab() {
       </p>
       <p className="muted">This can't be undone. The activity log keeps a note of it.</p>
     </ConfirmDialog>
+    {picked.size > 0 && (
+      <div className="bulk-bar" role="region" aria-label="Actions for the selected candidates">
+        <strong>{picked.size} selected</strong>
+        <button type="button" className="button button--small" onClick={() => moveSelected('accepted')} disabled={status.busy}>
+          <Check size={14} aria-hidden="true" /> Accept
+        </button>
+        <button type="button" className="button button--small button--danger-ghost" onClick={() => moveSelected('rejected')} disabled={status.busy}>
+          <X size={14} aria-hidden="true" /> Reject
+        </button>
+        <label className="bulk-bar__move">
+          Move to
+          <select
+            value=""
+            onChange={(e) => e.target.value && moveSelected(e.target.value as CandidateStatus)}
+            disabled={status.busy}
+            aria-label="Move the selected candidates to"
+          >
+            <option value="">Choose…</option>
+            {ALL_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" className="link-button" onClick={() => setPicked(new Set())}>
+          Clear
+        </button>
+      </div>
+    )}
+    {status.notice}
     <div className="card table-wrap">
       <table className="table">
         <thead>
           <tr>
+            <th scope="col" className="pick-cell">
+              <input
+                type="checkbox"
+                aria-label="Select all shown candidates"
+                checked={shown.length > 0 && shown.every((c) => picked.has(c.id))}
+                onChange={(e) => setPicked(e.target.checked ? new Set(shown.map((c) => c.id)) : new Set())}
+              />
+            </th>
             <th scope="col" title="Rank by AI score: #1 = best match">
               Rank
             </th>
@@ -233,7 +287,7 @@ export function JobCandidatesTab() {
         <tbody>
           {shown.length === 0 && (
             <tr>
-              <td colSpan={7} className="muted table__empty">
+              <td colSpan={8} className="muted table__empty">
                 {query
                   ? `No candidate named "${search.trim()}"${top ? ` in the top ${top}` : ''}${emailFilter !== 'all' ? ` with the email filter on` : ''}.`
                   : emailFilter === 'found'
@@ -257,6 +311,9 @@ export function JobCandidatesTab() {
                 if (event.key === 'Enter') setSelected(c);
               }}
             >
+              <td className="pick-cell" onClick={(event) => event.stopPropagation()}>
+                <input type="checkbox" checked={picked.has(c.id)} onChange={() => togglePick(c.id)} aria-label={`Select ${c.name}`} />
+              </td>
               <td className="rank-cell">
                 {ranks.has(c.id) ? `#${ranks.get(c.id)}` : <span className="muted" title="Not scored yet, so no rank">–</span>}
               </td>
@@ -336,6 +393,10 @@ export function JobCandidatesTab() {
       rankedCount={scoredCount}
       onClose={() => setSelected(null)}
       onRemove={deleteCandidate.ask}
+      onMove={(c, to) => {
+        setSelected(null);
+        void status.move([c.id], to);
+      }}
       onEdit={(c) => {
         setSelected(null);
         setEditing(c);

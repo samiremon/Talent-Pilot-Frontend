@@ -17,7 +17,8 @@
 import { ExternalLink, Mail, PencilLine, ShieldAlert, Trash2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { orUnknown, profileSite, timeAgo } from '../format';
-import type { Candidate } from '../types';
+import type { Candidate, CandidateStatus } from '../types';
+import { ALLOWED_MOVES, STATUS_LABELS } from '../pipeline';
 import { ScoreBadge, StatusChip } from './DataParts';
 
 /** "summary: a\nskills: b" -> [{ label: 'Summary', text: 'a' }, { label: 'Skills', text: 'b' }] */
@@ -62,9 +63,11 @@ interface Props {
   onRemove?: (candidate: Candidate) => void;
   /** Shows an "Edit contact" button (email / profile link). */
   onEdit?: (candidate: Candidate) => void;
+  /** Shows the allowed next statuses as buttons (Accept, Reject, Interviewed, ...). */
+  onMove?: (candidate: Candidate, to: CandidateStatus) => void;
 }
 
-export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, onRemove, onEdit }: Props) {
+export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, onRemove, onEdit, onMove }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -112,6 +115,23 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
                 score"). They were ignored, but the score may still be unreliable.
               </span>
             </p>
+          )}
+
+          {/* Review / pipeline: only the moves the rules allow from the current status. */}
+          {onMove && ALLOWED_MOVES[candidate.status].length > 0 && (
+            <div className="status-actions" role="group" aria-label="Change status">
+              <span className="muted small">Move to:</span>
+              {ALLOWED_MOVES[candidate.status].map((to) => (
+                <button
+                  key={to}
+                  type="button"
+                  className={`button button--small ${to === 'rejected' || to === 'unsubscribed' || to === 'not_interested' ? 'button--danger-ghost' : to === ALLOWED_MOVES[candidate.status][0] ? '' : 'button--ghost'}`}
+                  onClick={() => onMove(candidate, to)}
+                >
+                  {to === 'accepted' ? 'Accept' : to === 'rejected' ? 'Reject' : STATUS_LABELS[to]}
+                </button>
+              ))}
+            </div>
           )}
 
           <dl className="details-grid">

@@ -27,3 +27,26 @@ export const EXIT_STATUSES = [
 export const STATUS_LABELS = Object.fromEntries(
   [...PIPELINE_STATUSES, ...EXIT_STATUSES].map((s) => [s.id, s.label]),
 ) as Record<CandidateStatus, string>;
+
+/**
+ * Where a candidate may go NEXT from each status: a copy of the backend's rulebook
+ * (src/pipeline/status.ts), used to show only the buttons that make sense. The backend
+ * still checks every move, so a stale copy can never let a wrong move through.
+ */
+export const ALLOWED_MOVES: Record<CandidateStatus, readonly CandidateStatus[]> = {
+  sourced: ['accepted', 'rejected'],
+  accepted: ['contacted', 'rejected'],
+  contacted: ['replied', 'unsubscribed', 'rejected'],
+  replied: ['interested', 'not_interested', 'meeting_booked', 'unsubscribed', 'rejected'],
+  interested: ['meeting_booked', 'not_interested', 'unsubscribed', 'rejected'],
+  not_interested: ['interested', 'unsubscribed', 'rejected'],
+  meeting_booked: ['interviewed', 'unsubscribed', 'rejected'],
+  interviewed: ['shortlisted', 'unsubscribed', 'rejected'],
+  shortlisted: ['hired', 'unsubscribed', 'rejected'],
+  hired: [],
+  rejected: [],
+  unsubscribed: [],
+};
+
+/** All statuses in pipeline order (for "Move to" menus). */
+export const ALL_STATUSES = [...PIPELINE_STATUSES, ...EXIT_STATUSES].map((s) => s.id) as CandidateStatus[];

@@ -4,6 +4,8 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <StatusChangeCard> "Move to Accepted": who (ticked), from which status; ones the rules don't
+ *                    allow are greyed out with the reason. Confirm -> moved (+ activity log)
  *   <EditContactCard>  "Edit contact: Rafi Karim": email / profile link, old -> new (editable)
  *   <DeleteAllCandidatesCard> red card: "Delete all 33 candidates of JOB-0003?" (the job stays)
  *   <ScoreAgainCard>   "Score 22 unscored candidates in JOB-0002 again?" Confirm -> live progress
@@ -19,7 +21,7 @@
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
  * Delete buttons on the Jobs page.
  */
-import { Check, PencilLine, RefreshCw, Search, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
+import { ArrowRightLeft, Check, PencilLine, RefreshCw, Search, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
@@ -715,6 +717,79 @@ export function EditContactCard({ card, onDecided }: { card: ActionCard; onDecid
             </div>
             <p className="job-card__hint">Nothing changes until you press Confirm. You can fix the new value first.</p>
           </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** "Move to Accepted": the people, ticked; the ones the pipeline rules don't allow are greyed out. */
+export function StatusChangeCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as {
+    jobCode?: string;
+    title?: string;
+    toLabel?: string;
+    candidates: { id: string; name: string; fromLabel: string; score: number | null; rank: number | null; allowed: boolean; reason: string | null }[];
+  };
+  const [ticked, setTicked] = useState<Set<string>>(() => new Set(payload.candidates.filter((c) => c.allowed).map((c) => c.id)));
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const toggle = (id: string) =>
+    setTicked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Proposed status change">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <ArrowRightLeft size={16} aria-hidden="true" /> Move to {payload.toLabel}
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          {payload.jobCode} {payload.title}
+        </p>
+        <ul className="status-pick">
+          {payload.candidates.map((c) => (
+            <li key={c.id} className={c.allowed ? '' : 'status-pick__off'}>
+              <label>
+                <input type="checkbox" checked={ticked.has(c.id)} onChange={() => toggle(c.id)} disabled={!pending || !c.allowed} />
+                <strong>{c.name}</strong>
+                <span className="muted small">
+                  {c.rank ? ` #${c.rank}` : ''}
+                  {c.score !== null ? ` · ${c.score}` : ''} · {c.fromLabel} → {payload.toLabel}
+                </span>
+              </label>
+              {!c.allowed && c.reason && <span className="status-pick__reason">{c.reason}</span>}
+            </li>
+          ))}
+        </ul>
+        {card.notes.length > 0 && pending && (
+          <ul className="job-card__notes">
+            {card.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending && (
+          <div className="job-card__actions">
+            <button type="button" className="button" onClick={() => decide('confirm', { candidateIds: [...ticked] })} disabled={busy !== null || ticked.size === 0}>
+              <Check size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Saving…' : `Confirm (${ticked.size})`}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Cancel
+            </button>
+          </div>
         )}
       </div>
     </section>

@@ -537,3 +537,22 @@ a.table__title:hover { color: var(--accent-text); }
 .table-filters__search input:focus-visible { box-shadow: none; outline: none; border-radius: 0; }
 .table-filters__search:focus-within { box-shadow: var(--focus); }
 .segmented__number:focus-visible { box-shadow: none; border-color: var(--accent); }
+
+/* Review: row checkboxes, the bar for the selected rows, and the status notice with Undo. */
+.pick-cell { width: 1%; padding-right: 0; }
+.pick-cell input { width: 16px; height: 16px; cursor: pointer; }
+.bulk-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 10px; padding: 8px 12px;
+  border: 1px solid var(--accent); border-radius: 10px; background: var(--accent-weak);
+}
+.bulk-bar__move { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.status-notice {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-bottom: 10px; padding: 8px 12px; border-radius: 10px;
+  background: var(--ok-bg); color: var(--text); font-size: 14px;
+}
+.status-notice--error { background: var(--bad-bg); color: var(--bad); }
+.status-notice .link-button { display: inline-flex; align-items: center; gap: 4px; }
+/* Candidate popup: "Move to: [Accept] [Reject]" */
+.status-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }

@@ -260,3 +260,9 @@
 /* Find candidates card: the site rows stack (the chat panel is narrow). */
 .source-list--card { margin: 8px 0; }
 .source-list--card .source-row { grid-template-columns: 1fr; gap: 4px; }
+
+/* Status card: one line per person (tick + name + rank/score + from -> to). */
+.status-pick { list-style: none; margin: 6px 0 10px; padding: 0; display: grid; gap: 6px; }
+.status-pick label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; cursor: pointer; }
+.status-pick__off { opacity: 0.6; }
+.status-pick__reason { display: block; margin-left: 22px; font-size: 12px; color: var(--bad); }
