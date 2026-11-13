@@ -11,7 +11,7 @@
  * This component loads the job and its candidates ONCE and hands them to whichever tab
  * is open (through react-router's "outlet context"), so switching tabs is instant.
  */
-import { Check, ExternalLink, History, Inbox, Info, Mail, Pencil, Search, Trash2, Users, X } from 'lucide-react';
+import { Check, ExternalLink, History, Inbox, Info, Mail, Pencil, Search, Send, Trash2, Users, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { ActivityList, LoadState, ScoreBadge, StatusChip } from '../components/DataParts';
@@ -156,20 +156,11 @@ export function JobCandidatesTab() {
       else next.add(id);
       return next;
     });
-  // "Email them": a campaign for the ticked people (only Accepted ones with an email are
-  // added; the server checks), then over to the Emails tab to review the drafts.
+  // "Email campaign": opens the campaign popup on the Emails tab with the ticked people
+  // already selected (only Accepted ones with an email can be added; the popup shows them).
   const navigate = useNavigate();
-  const [emailError, setEmailError] = useState<string | null>(null);
-  async function emailSelected(sequence: 'single' | 'sequence') {
-    setEmailError(null);
-    try {
-      await api(`/jobs/${job.id}/campaigns`, { method: 'POST', body: { sequence, candidateIds: [...picked] } });
-      setPicked(new Set());
-      notifyDataChanged();
-      navigate(`/jobs/${job.id}/emails`);
-    } catch (err) {
-      setEmailError(err instanceof ApiError ? err.message : 'Could not create the campaign.');
-    }
+  function emailSelected() {
+    navigate(`/jobs/${job.id}/emails`, { state: { campaignFor: [...picked] } });
   }
   async function moveSelected(to: CandidateStatus) {
     await status.move([...picked], to);
@@ -269,28 +260,15 @@ export function JobCandidatesTab() {
             ))}
           </select>
         </label>
-        <label className="bulk-bar__move">
-          Email them
-          <select
-            value=""
-            onChange={(e) => e.target.value && emailSelected(e.target.value as 'single' | 'sequence')}
-            aria-label="Create an email campaign for the selected candidates"
-          >
-            <option value="">Choose…</option>
-            <option value="single">Single email</option>
-            <option value="sequence">Day 0 / 3 / 7 sequence</option>
-          </select>
-        </label>
+        <button type="button" className="button button--small button--ghost" onClick={emailSelected}>
+          <Send size={14} aria-hidden="true" /> Email campaign
+        </button>
         <button type="button" className="link-button" onClick={() => setPicked(new Set())}>
           Clear
         </button>
       </div>
     )}
-    {emailError && (
-      <p className="form-error" role="alert">
-        {emailError}
-      </p>
-    )}
+
     {status.notice}
     <div className="card table-wrap">
       <table className="table">

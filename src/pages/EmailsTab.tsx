@@ -2,20 +2,22 @@
  * The job's Emails tab: outreach campaigns.
  *
  *   [Sandbox mode: emails go to the test inbox (Mailpit) · 3 of 50 sent in the last 24 h]
- *   [ New campaign ]                              (only Accepted candidates with an email)
+ *   [ Email campaign ]   -> popup: Single email or Sequence, who gets it, then the drafts
  *
- *   JOB-0003 outreach (Day 0 / 3 / 7)        Draft · Waiting for your approval
- *     [ Approve & send ]
- *     Ana Ahmed  ana@example.com  · Accepted                                  [Remove]
- *       Day 0  [subject ...........]  [text .....................]   Draft
- *       Day 3  ...
+ *   JOB-0003 outreach (Day 0 / 3 / 7)        Sending · Next: Possible follow-up 1 in 2:43
+ *     Ana Ahmed  ana@example.com  · Contacted                              [Remove]
+ *       First email                 Sent · 3 min ago
+ *       Possible follow-up 1 · Day 3   Scheduled · in 2:43   (editable until it goes out)
+ *       Possible follow-up 2 · Day 7   Scheduled · in 6:43
  *
- * Every draft can be edited until it's sent. Nothing is sent before "Approve & send";
- * then a background job sends each step on its day (daily limit; never the same step
- * twice; follow-ups stop when someone replies). Same backend functions as the AI's cards.
+ * Nothing is sent before "Approve & send"; then a background job sends each step on its day
+ * (daily limit; never the same step twice; follow-ups stop when someone replies or
+ * unsubscribes: every email has an Unsubscribe button through the standard email headers).
+ * Same backend functions as the AI's chat cards.
  */
-import { Check, Mail, Pause, Play, Send, UserMinus } from 'lucide-react';
-import { useState } from 'react';
+import { Check, Mail, Pause, Play, Send, UserMinus, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { LoadState, StatusChip } from '../components/DataParts';
 import { EmptyState } from '../components/PageParts';
@@ -52,8 +54,16 @@ interface Campaign {
   messages: Message[];
 }
 
+interface Eligible {
+  id: string;
+  name: string;
+  email: string;
+  score: number | null;
+}
+
 interface CampaignsResponse {
   settings: { mode: 'sandbox' | 'live'; dailyLimit: number; daySeconds: number; sentLast24h: number; eligible: number };
+  eligible: Eligible[];
   campaigns: Campaign[];
 }
 
@@ -69,30 +79,46 @@ const MESSAGE_LABELS: Record<Message['status'], string> = {
   approved: 'Scheduled',
   sending: 'Sending…',
   sent: 'Sent',
-  skipped: 'Skipped',
+  skipped: 'Not sent',
   failed: 'Failed',
 };
+
+/** "First email" / "Possible follow-up 1 · Day 3": follow-ups only go out if they haven't replied. */
+export function stepLabel(step: number, day: number): string {
+  return step === 0 ? 'First email' : `Possible follow-up ${step} · Day ${day}`;
+}
+
+/** The current time, updated every second (for the countdowns). */
+function useNow(): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
+}
+
+/** 163 s -> "2:43"; 2 h 5 min -> "2 h 5 min"; 3 days -> "3 days 4 h". */
+function countdown(ms: number): string {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  if (s < 3600) return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const h = Math.floor(s / 3600);
+  if (h < 24) return `${h} h ${Math.floor((s % 3600) / 60)} min`;
+  return `${Math.floor(h / 24)} days ${h % 24} h`;
+}
 
 export function EmailsTab({ jobId }: { jobId: string }) {
   const { data, error, loading } = useApi<CampaignsResponse>(`/jobs/${jobId}/campaigns`);
   // Live: drafting / sending progress updates this tab (through the shared live stream).
   useJobTasks(jobId);
-  const [creating, setCreating] = useState(false);
-  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
-
-  async function create(sequence: 'single' | 'sequence') {
-    setCreating(true);
-    setNotice(null);
-    try {
-      const r = await api<{ candidates: number }>(`/jobs/${jobId}/campaigns`, { method: 'POST', body: { sequence } });
-      setNotice({ ok: true, text: `Campaign created for ${r.candidates} candidate${r.candidates === 1 ? '' : 's'}. The AI is writing the drafts.` });
-      notifyDataChanged();
-    } catch (err) {
-      setNotice({ ok: false, text: err instanceof ApiError ? err.message : 'Could not create the campaign.' });
-    } finally {
-      setCreating(false);
-    }
-  }
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Came from "Email them" on the Candidates tab: open the popup with those people ticked.
+  const preselected = (location.state as { campaignFor?: string[] } | null)?.campaignFor;
+  const [dialog, setDialog] = useState<{ open: boolean; preselected?: string[] }>({ open: Boolean(preselected), preselected });
+  useEffect(() => {
+    if (preselected) navigate(location.pathname, { replace: true, state: null }); // don't reopen on refresh
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data) return <LoadState loading={loading} error={error} />;
   const { settings, campaigns } = data;
@@ -121,40 +147,226 @@ export function EmailsTab({ jobId }: { jobId: string }) {
       </div>
 
       <div className="emails-tab__new">
-        <span className="muted small">
-          {settings.eligible
-            ? `${settings.eligible} accepted candidate${settings.eligible === 1 ? '' : 's'} with an email can be added.`
-            : 'Only Accepted candidates with an email can be emailed. Accept some on the Candidates tab first.'}
-        </span>
-        <button type="button" className="button" onClick={() => create('single')} disabled={creating || settings.eligible === 0}>
-          <Send size={16} aria-hidden="true" /> Single email
-        </button>
-        <button type="button" className="button button--ghost" onClick={() => create('sequence')} disabled={creating || settings.eligible === 0}>
-          <Send size={16} aria-hidden="true" /> Sequence: Day 0 / 3 / 7
+        <button type="button" className="button" onClick={() => setDialog({ open: true })}>
+          <Send size={16} aria-hidden="true" /> Email campaign
         </button>
       </div>
-      {notice && <p className={notice.ok ? 'form-notice' : 'form-error'}>{notice.text}</p>}
 
       {campaigns.length === 0 ? (
         <div className="card">
           <EmptyState icon={Mail} title="No outreach yet">
-            Create a campaign above (or ask the AI). It drafts a personal email, or a Day 0 / 3 / 7 sequence, for each accepted
-            candidate. You preview and edit, and nothing is sent until you approve.
+            Press <strong>Email campaign</strong> (or ask the AI) to write a personal email, or a first email with two possible
+            follow-ups, for accepted candidates. You see and edit every draft, and nothing is sent until you approve.
           </EmptyState>
         </div>
       ) : (
         campaigns.map((c) => <CampaignCard key={c.id} jobId={jobId} campaign={c} />)
       )}
+
+      {dialog.open && (
+        <CampaignDialog
+          jobId={jobId}
+          data={data}
+          preselected={dialog.preselected}
+          onClose={() => setDialog({ open: false })}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * "Email campaign" popup:
+ *   1. choose: Single email, or Sequence (first email + possible follow-up 1 on Day 3 +
+ *      possible follow-up 2 on Day 7), and who gets it (Accepted candidates with an email)
+ *   2. "Write drafts": the AI writes them (live progress)
+ *   3. every draft, per person: First email / Possible follow-up 1 / Possible follow-up 2,
+ *      editable; then "Approve & send" (or close: the drafts stay on the Emails tab)
+ */
+function CampaignDialog({ jobId, data, preselected, onClose }: { jobId: string; data: CampaignsResponse; preselected?: string[]; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [sequence, setSequence] = useState<'single' | 'sequence'>('sequence');
+  const [ticked, setTicked] = useState<Set<string>>(
+    () => new Set(preselected?.length ? data.eligible.filter((e) => preselected.includes(e.id)).map((e) => e.id) : data.eligible.map((e) => e.id)),
+  );
+  const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const campaign = campaignId ? data.campaigns.find((c) => c.id === campaignId) : undefined;
+
+  useEffect(() => {
+    ref.current?.showModal();
+  }, []);
+
+  function toggle(id: string) {
+    setTicked((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function writeDrafts() {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api<{ campaignId: string }>(`/jobs/${jobId}/campaigns`, { method: 'POST', body: { sequence, candidateIds: [...ticked] } });
+      setCampaignId(r.campaignId);
+      notifyDataChanged();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not create the campaign.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function approve() {
+    if (!campaignId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/jobs/${jobId}/campaigns/${campaignId}/approve`, { method: 'POST', body: {} });
+      notifyDataChanged();
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not approve.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const people = new Map<string, Message[]>();
+  for (const m of campaign?.messages ?? []) people.set(m.candidateId, [...(people.get(m.candidateId) ?? []), m]);
+
+  return (
+    <dialog ref={ref} className="details-dialog campaign-dialog" aria-labelledby="campaign-title" onClose={onClose}>
+      <div className="details-dialog__panel">
+        <header className="details-dialog__header">
+          <h2 id="campaign-title">
+            <Send size={18} aria-hidden="true" /> Email campaign
+          </h2>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
+        </header>
+
+        {!campaignId && (
+          <>
+            <div className="campaign-dialog__types" role="radiogroup" aria-label="Single email or sequence">
+              {(['single', 'sequence'] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  role="radio"
+                  aria-checked={sequence === s}
+                  className={`campaign-type${sequence === s ? ' campaign-type--active' : ''}`}
+                  onClick={() => setSequence(s)}
+                >
+                  <strong>{s === 'single' ? 'Single email' : 'Sequence of emails'}</strong>
+                  <span className="muted small">
+                    {s === 'single'
+                      ? 'One personal email to each candidate.'
+                      : 'First email, then Possible follow-up 1 (Day 3) and Possible follow-up 2 (Day 7), only if they haven\'t replied.'}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <h3 className="campaign-dialog__subtitle">Who gets it ({ticked.size})</h3>
+            {data.eligible.length === 0 ? (
+              <p className="muted">Nobody yet: accept candidates who have an email on the Candidates tab.</p>
+            ) : (
+              <ul className="status-pick">
+                {data.eligible.map((c) => (
+                  <li key={c.id}>
+                    <label>
+                      <input type="checkbox" checked={ticked.has(c.id)} onChange={() => toggle(c.id)} />
+                      <strong>{c.name}</strong>
+                      <span className="muted small">
+                        {c.email}
+                        {c.score !== null ? ` · ${c.score}` : ''}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
+            <div className="form-actions">
+              <button type="button" className="button button--ghost" onClick={onClose}>
+                Cancel
+              </button>
+              <button type="button" className="button" onClick={writeDrafts} disabled={busy || ticked.size === 0}>
+                {busy ? 'Starting…' : `Write drafts for ${ticked.size}`}
+              </button>
+            </div>
+            <p className="muted small">The AI writes the drafts; you see and edit all of them here before anything is sent.</p>
+          </>
+        )}
+
+        {campaignId && (!campaign || campaign.status === 'drafting') && (
+          <div className="campaign-dialog__wait" role="status">
+            <span className="task-progress__dot" aria-hidden="true" /> {campaign?.draftTask?.message ?? 'The AI is writing the drafts…'}
+          </div>
+        )}
+
+        {campaign && campaign.status !== 'drafting' && (
+          <>
+            <p className="muted small">
+              {people.size} candidate{people.size === 1 ? '' : 's'} · {campaign.stepDays.length === 1 ? 'single email' : 'first email + 2 possible follow-ups'}. Edit any draft,
+              then approve.
+            </p>
+            <div className="campaign-dialog__drafts">
+              {[...people.entries()].map(([candidateId, messages]) => (
+                <div key={candidateId} className="campaign__person">
+                  <div className="campaign__person-head">
+                    <strong>{messages[0]!.candidateName}</strong>
+                    <span className="muted small">{messages[0]!.to}</span>
+                  </div>
+                  {messages.map((m) => (
+                    <MessageRow key={m.id} jobId={jobId} message={m} />
+                  ))}
+                </div>
+              ))}
+            </div>
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
+            <div className="form-actions">
+              <button type="button" className="button button--ghost" onClick={onClose}>
+                Close (keep as drafts)
+              </button>
+              {campaign.status === 'draft' && (
+                <button type="button" className="button" onClick={approve} disabled={busy}>
+                  <Check size={16} aria-hidden="true" /> {busy ? 'Approving…' : 'Approve & send'}
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </dialog>
   );
 }
 
 function CampaignCard({ jobId, campaign }: { jobId: string; campaign: Campaign }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const now = useNow();
   const people = new Map<string, Message[]>();
   for (const m of campaign.messages) people.set(m.candidateId, [...(people.get(m.candidateId) ?? []), m]);
   const sent = campaign.messages.filter((m) => m.status === 'sent').length;
+  // The next email due (for the countdown in the header).
+  const next = campaign.messages
+    .filter((m) => m.status === 'approved' && m.sendAt)
+    .sort((a, b) => new Date(a.sendAt!).getTime() - new Date(b.sendAt!).getTime())[0];
 
   async function act(path: string, body: object = {}) {
     setBusy(true);
@@ -169,7 +381,6 @@ function CampaignCard({ jobId, campaign }: { jobId: string; campaign: Campaign }
     }
   }
 
-  const progress = campaign.status === 'drafting' ? campaign.draftTask?.message : campaign.sendTask?.message;
   return (
     <section className="card campaign">
       <header className="campaign__header">
@@ -181,6 +392,12 @@ function CampaignCard({ jobId, campaign }: { jobId: string; campaign: Campaign }
             · {people.size} candidate{people.size === 1 ? '' : 's'} · {sent} of {campaign.messages.length} emails sent
             {campaign.mode === 'sandbox' && ' · sandbox'}
           </span>
+          {next && campaign.status === 'active' && (
+            <div className="campaign__next">
+              Next: {stepLabel(next.step, next.day)} to {next.candidateName} in{' '}
+              <strong className="countdown">{countdown(new Date(next.sendAt!).getTime() - now)}</strong>
+            </div>
+          )}
         </div>
         <div className="campaign__actions">
           {campaign.status === 'draft' && (
@@ -200,7 +417,7 @@ function CampaignCard({ jobId, campaign }: { jobId: string; campaign: Campaign }
           )}
         </div>
       </header>
-      {progress && <p className="campaign__progress muted small">{progress}</p>}
+      {campaign.status === 'drafting' && campaign.draftTask?.message && <p className="campaign__progress muted small">{campaign.draftTask.message}</p>}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -222,14 +439,14 @@ function CampaignCard({ jobId, campaign }: { jobId: string; campaign: Campaign }
                   className="link-button campaign__remove"
                   onClick={() => act('remove', { candidateId })}
                   disabled={busy}
-                  title="Take this candidate out of the campaign (their unsent emails are skipped)"
+                  title="Take this candidate out of the campaign (their unsent emails won't be sent)"
                 >
                   <UserMinus size={14} aria-hidden="true" /> Remove
                 </button>
               )}
             </div>
             {messages.map((m) => (
-              <MessageRow key={m.id} jobId={jobId} message={m} />
+              <MessageRow key={m.id} jobId={jobId} message={m} now={now} />
             ))}
           </div>
         );
@@ -238,13 +455,20 @@ function CampaignCard({ jobId, campaign }: { jobId: string; campaign: Campaign }
   );
 }
 
-/** One email: editable while it's a draft or scheduled; read-only once sent / skipped. */
-function MessageRow({ jobId, message }: { jobId: string; message: Message }) {
+/** One email: editable while it's a draft or scheduled; read-only once sent / not sent. */
+function MessageRow({ jobId, message, now }: { jobId: string; message: Message; now?: number }) {
   const editable = message.status === 'draft' || message.status === 'approved';
   const [subject, setSubject] = useState(message.subject);
   const [body, setBody] = useState(message.body);
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const dirty = subject !== message.subject || body !== message.body;
+  // New text from the server (e.g. the AI just finished the draft): show it, unless being edited.
+  useEffect(() => {
+    if (!dirty) {
+      setSubject(message.subject);
+      setBody(message.body);
+    }
+  }, [message.subject, message.body]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
     setSaved('saving');
@@ -260,15 +484,17 @@ function MessageRow({ jobId, message }: { jobId: string; message: Message }) {
   return (
     <div className={`email-step email-step--${message.status}`}>
       <div className="email-step__meta">
-        <span className="email-step__day">Day {message.day}</span>
+        <span className="email-step__day">{stepLabel(message.step, message.day)}</span>
         <span className={`email-step__status email-step__status--${message.status}`}>{MESSAGE_LABELS[message.status]}</span>
-        {message.status === 'approved' && message.sendAt && <span className="muted small">at {new Date(message.sendAt).toLocaleString()}</span>}
+        {message.status === 'approved' && message.sendAt && (
+          <span className="small countdown">in {countdown(new Date(message.sendAt).getTime() - (now ?? Date.now()))}</span>
+        )}
         {message.sentAt && <span className="muted small">{timeAgo(message.sentAt)}</span>}
       </div>
       {editable ? (
         <div className="email-step__edit">
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} aria-label={`Subject, Day ${message.day}, ${message.candidateName}`} placeholder="Subject" />
-          <textarea rows={5} value={body} onChange={(e) => setBody(e.target.value)} aria-label={`Email text, Day ${message.day}, ${message.candidateName}`} placeholder="Email text" />
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} aria-label={`Subject, ${stepLabel(message.step, message.day)}, ${message.candidateName}`} placeholder="Subject" />
+          <textarea rows={6} value={body} onChange={(e) => setBody(e.target.value)} aria-label={`Email text, ${stepLabel(message.step, message.day)}, ${message.candidateName}`} placeholder="Email text" />
           <div className="email-step__save">
             <button type="button" className="button button--small button--ghost" onClick={save} disabled={!dirty || saved === 'saving'}>
               {saved === 'saving' ? 'Saving…' : 'Save changes'}

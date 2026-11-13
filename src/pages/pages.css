@@ -612,3 +612,20 @@ a.table__title:hover { color: var(--accent-text); }
 .timeline__event--undone .timeline__text { text-decoration: line-through; color: var(--muted); }
 .timeline__time { white-space: nowrap; }
 .details-section--timeline { margin-bottom: 16px; }
+
+/* Email campaign popup: wider, two big choices, then the drafts. */
+.details-dialog.campaign-dialog { width: min(880px, calc(100vw - 32px)); }
+.campaign-dialog__types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+@media (max-width: 600px) { .campaign-dialog__types { grid-template-columns: 1fr; } }
+.campaign-type {
+  display: grid; gap: 4px; text-align: left; padding: 12px 14px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit;
+}
+.campaign-type:hover { border-color: var(--accent); }
+.campaign-type--active { border-color: var(--accent); background: var(--accent-weak); box-shadow: 0 0 0 1px var(--accent); }
+.campaign-dialog__subtitle { font-size: 14px; margin: 4px 0 6px; }
+.campaign-dialog__wait { display: flex; align-items: center; gap: 8px; padding: 16px 0; }
+.campaign-dialog__drafts { display: grid; gap: 12px; max-height: 60vh; overflow: auto; padding-right: 4px; }
+/* Countdowns ("in 2:43") and the campaign's "Next: ..." line. */
+.countdown { font-variant-numeric: tabular-nums; color: var(--accent-text); font-weight: 600; }
+.campaign__next { margin-top: 6px; font-size: 14px; }
