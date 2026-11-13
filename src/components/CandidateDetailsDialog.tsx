@@ -14,7 +14,7 @@
  *
  * Uses the browser's <dialog>: Esc closes, focus stays inside, the page behind is dimmed.
  */
-import { ExternalLink, Mail, ShieldAlert, Trash2, X } from 'lucide-react';
+import { ExternalLink, Mail, PencilLine, ShieldAlert, Trash2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { orUnknown, profileSite, timeAgo } from '../format';
 import type { Candidate } from '../types';
@@ -60,9 +60,11 @@ interface Props {
   onClose: () => void;
   /** Shows a "Remove candidate" button (it asks for confirmation first). */
   onRemove?: (candidate: Candidate) => void;
+  /** Shows an "Edit contact" button (email / profile link). */
+  onEdit?: (candidate: Candidate) => void;
 }
 
-export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, onRemove }: Props) {
+export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, onRemove, onEdit }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -210,11 +212,18 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
             ))
           )}
 
-          {onRemove && (
+          {(onRemove || onEdit) && (
             <div className="details-dialog__footer">
-              <button type="button" className="button button--danger-ghost" onClick={() => onRemove(candidate)}>
-                <Trash2 size={16} aria-hidden="true" /> Remove candidate
-              </button>
+              {onEdit && (
+                <button type="button" className="button button--ghost" onClick={() => onEdit(candidate)}>
+                  <PencilLine size={16} aria-hidden="true" /> Edit contact
+                </button>
+              )}
+              {onRemove && (
+                <button type="button" className="button button--danger-ghost" onClick={() => onRemove(candidate)}>
+                  <Trash2 size={16} aria-hidden="true" /> Remove candidate
+                </button>
+              )}
             </div>
           )}
         </div>

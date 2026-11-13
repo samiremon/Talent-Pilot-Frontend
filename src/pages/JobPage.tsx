@@ -22,6 +22,7 @@ import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Segmented, TopPicker } from '../components/Segmented';
+import { EditContactDialog } from '../components/EditContactDialog';
 import { api } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
@@ -143,6 +144,8 @@ export function JobCandidatesTab() {
   const deleteCandidate = useDeleteCandidate(job.id, { onDeleted: () => setSelected(null) });
   // "Delete all": removes every candidate of this job (asks first; the job stays).
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  // The candidate whose email / profile link is being edited (null = closed).
+  const [editing, setEditing] = useState<Candidate | null>(null);
 
   // No score AND no reason = the AI hasn't scored them yet (e.g. a run hit a problem).
   const unscored = candidates.filter((c) => c.score === null && !c.scoreReason).length;
@@ -297,6 +300,19 @@ export function JobCandidatesTab() {
               <td className="row-actions">
                 <button
                   type="button"
+                  className="icon-button"
+                  aria-label={`Edit ${c.name}'s email and profile link`}
+                  title="Edit email / profile link"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setEditing(c);
+                  }}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  <Pencil size={16} />
+                </button>
+                <button
+                  type="button"
                   className="icon-button icon-button--danger"
                   aria-label={`Remove ${c.name}`}
                   title="Remove candidate"
@@ -320,7 +336,12 @@ export function JobCandidatesTab() {
       rankedCount={scoredCount}
       onClose={() => setSelected(null)}
       onRemove={deleteCandidate.ask}
+      onEdit={(c) => {
+        setSelected(null);
+        setEditing(c);
+      }}
     />
+    <EditContactDialog jobId={job.id} candidate={editing} onClose={() => setEditing(null)} />
     {deleteCandidate.dialog}
     </>
   );

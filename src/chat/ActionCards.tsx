@@ -4,6 +4,7 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <EditContactCard>  "Edit contact: Rafi Karim": email / profile link, old -> new (editable)
  *   <DeleteAllCandidatesCard> red card: "Delete all 33 candidates of JOB-0003?" (the job stays)
  *   <ScoreAgainCard>   "Score 22 unscored candidates in JOB-0002 again?" Confirm -> live progress
  *                    -> the AI posts the result
@@ -627,6 +628,93 @@ export function DeleteAllCandidatesCard({ card, onDecided }: { card: ActionCard;
               <X size={16} aria-hidden="true" /> Keep
             </button>
           </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+const CONTACT_LABELS: Record<string, string> = { email: 'Email', profileUrl: 'Profile link' };
+
+/** "Edit contact: Rafi Karim": the email / profile link, old -> new (still editable). */
+export function EditContactCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as {
+    jobId: string;
+    jobCode?: string;
+    name?: string;
+    before: Record<string, string | null>;
+    changes: Record<string, string | null>;
+  };
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(Object.entries(payload.changes).map(([k, v]) => [k, v ?? ''])),
+  );
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Proposed contact change">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <PencilLine size={16} aria-hidden="true" /> Edit contact
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          {payload.name} · {payload.jobCode}
+        </p>
+        <table className="change-table">
+          <thead>
+            <tr>
+              <th scope="col">Field</th>
+              <th scope="col">Now</th>
+              <th scope="col">New</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.keys(payload.changes).map((key) => (
+              <tr key={key}>
+                <th scope="row">{CONTACT_LABELS[key] ?? key}</th>
+                <td className="change-table__old">{payload.before?.[key] || 'None'}</td>
+                <td>
+                  {pending ? (
+                    <input
+                      value={values[key]}
+                      onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+                      aria-label={`New ${CONTACT_LABELS[key] ?? key}`}
+                    />
+                  ) : (
+                    <strong>{payload.changes[key] || 'None'}</strong>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {card.notes.length > 0 && pending && (
+          <ul className="job-card__notes">
+            {card.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+        )}
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending && (
+          <>
+            <div className="job-card__actions">
+              <button type="button" className="button" onClick={() => decide('confirm', values)} disabled={busy !== null}>
+                <Check size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Saving…' : 'Confirm'}
+              </button>
+              <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+                <X size={16} aria-hidden="true" /> Cancel
+              </button>
+            </div>
+            <p className="job-card__hint">Nothing changes until you press Confirm. You can fix the new value first.</p>
+          </>
         )}
       </div>
     </section>

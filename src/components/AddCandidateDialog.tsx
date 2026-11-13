@@ -13,7 +13,7 @@ import { api, ApiError } from '../api';
 import { notifyDataChanged } from '../useApi';
 
 // Common typos of popular email domains (the backend checks the same list).
-const TYPO_FIXES: Record<string, string> = {
+export const TYPO_FIXES: Record<string, string> = {
   'gmial.com': 'gmail.com',
   'gmai.com': 'gmail.com',
   'gamil.com': 'gmail.com',
