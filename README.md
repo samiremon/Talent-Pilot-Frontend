@@ -1,7 +1,6 @@
 # TalentPilot Frontend
 
 Web app for **TalentPilot**, a chat-first AI recruiting co-worker.
-See [plan.md](plan.md) for the full project plan.
 
 ## Run locally
 
