@@ -2,8 +2,13 @@
  * "What's left": the Activity → Remaining usage tab.
  *
  * Per Groq model (live, from Groq's own answers):
- *   - Requests left today        e.g. 992 / 1,000  (99%)  resets in 11 min
+ *   - Requests left              e.g. 997 / 1,000 (99%)
  *   - Tokens left this minute    e.g. 7,923 / 8,000
+ *   - Your AI calls in the last 24 h (from our own token log)
+ *
+ * Important: Groq's limits are REFILLING BUCKETS, not daily counters. 1,000 requests a day
+ * means one used request comes back every 86.4 s, so "requests left" stays near 1,000 unless
+ * many requests are made in a short time. That's why we also show the real 24 h usage.
  *   - Tokens left today          our own count vs the daily limit from .env (if set)
  * Across all models:
  *   - This week / this month     usage, and % left of your own budget (if set in .env).
@@ -24,7 +29,8 @@ interface Meter {
   limit: number | null;
   remaining: number | null;
   percentLeft: number | null;
-  resetsAt?: string | null;
+  /** Requests only: seconds until one used request comes back. */
+  refillSeconds?: number | null;
 }
 
 interface AiLimits {
@@ -33,6 +39,7 @@ interface AiLimits {
     model: string;
     usedBy: string[];
     updatedAt: string | null;
+    callsLast24h: number;
     requestsToday: Meter;
     tokensPerMinute: Meter;
     tokensToday: Meter & { used: number };
@@ -43,17 +50,7 @@ interface AiLimits {
 
 const ROLE_NAMES: Record<string, string> = { agent: 'chat & writing', bulk: 'scoring & sorting', safety: 'safety checks' };
 
-/** "in 11 min" / "in 40 s" / "now" */
-function resetsIn(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const seconds = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
-  if (seconds <= 0) return 'refilled';
-  if (seconds < 90) return `resets in ${seconds} s`;
-  if (seconds < 90 * 60) return `resets in ${Math.round(seconds / 60)} min`;
-  return `resets in ${Math.round(seconds / 3600)} h`;
-}
-
-function LimitBar({ label, meter, unit, note }: { label: string; meter: Meter; unit: string; note?: string }) {
+function LimitBar({ label, meter, unit, note, hint }: { label: string; meter: Meter; unit: string; note?: string; hint?: string }) {
   if (meter.percentLeft === null || meter.limit === null || meter.remaining === null) {
     return (
       <div className="limit">
@@ -83,7 +80,7 @@ function LimitBar({ label, meter, unit, note }: { label: string; meter: Meter; u
       >
         <span className={`limit__fill limit__fill--${level}`} style={{ width: `${meter.percentLeft}%` }} />
       </div>
-      {meter.resetsAt && <span className="limit__note">{resetsIn(meter.resetsAt)}</span>}
+      {hint && <span className="limit__note">{hint}</span>}
     </div>
   );
 }
@@ -149,8 +146,27 @@ export function AiLimitsCard() {
                   {m.model}
                   <span className="muted small"> · {m.usedBy.map((r) => ROLE_NAMES[r] ?? r).join(', ')}</span>
                 </div>
-                <LimitBar label="Requests today" meter={m.requestsToday} unit="requests" note="Updates after this model's next AI call" />
-                <LimitBar label="Tokens this minute" meter={m.tokensPerMinute} unit="tokens" note="Updates after this model's next AI call" />
+                <LimitBar
+                  label="Requests left"
+                  meter={m.requestsToday}
+                  unit="requests"
+                  note="Updates after this model's next AI call"
+                  hint={
+                    m.requestsToday.refillSeconds
+                      ? `Groq's limit is ${m.requestsToday.limit?.toLocaleString()} a day as a refilling bucket: each used request comes back after ${m.requestsToday.refillSeconds} s.`
+                      : undefined
+                  }
+                />
+                <div className="limit__usage">
+                  Your AI calls in the last 24 h: <strong>{m.callsLast24h.toLocaleString()}</strong>
+                </div>
+                <LimitBar
+                  label="Tokens this minute"
+                  meter={m.tokensPerMinute}
+                  unit="tokens"
+                  note="Updates after this model's next AI call"
+                  hint="Refills over each minute."
+                />
                 <LimitBar
                   label="Tokens today"
                   meter={m.tokensToday}
