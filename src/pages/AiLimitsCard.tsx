@@ -1,5 +1,5 @@
 /**
- * "What's left" card at the top of Activity → Token dashboard.
+ * "What's left": the Activity → Remaining usage tab.
  *
  * Per Groq model (live, from Groq's own answers):
  *   - Requests left today        e.g. 992 / 1,000  (99%)  resets in 11 min

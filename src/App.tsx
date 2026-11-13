@@ -22,7 +22,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { AppShell } from './layout/AppShell';
-import { ActivityPage, ActivityTab, TokenDashboardTab, TokenUsageTab } from './pages/ActivityPage';
+import { ActivityPage, ActivityTab, RemainingUsageTab, TokenDashboardTab, TokenUsageTab } from './pages/ActivityPage';
 import { DashboardPage } from './pages/DashboardPage';
 import {
   JobActivityTab,
@@ -97,6 +97,7 @@ export function App() {
           <Route index element={<ActivityTab />} />
           <Route path="token-usage" element={<TokenUsageTab />} />
           <Route path="token-dashboard" element={<TokenDashboardTab />} />
+          <Route path="remaining-usage" element={<RemainingUsageTab />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

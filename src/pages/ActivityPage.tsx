@@ -5,10 +5,12 @@
  *   /activity/token-usage        Token usage: every AI call, who, what task, tokens
  *   /activity/token-dashboard    Token dashboard: tokens per recruiter, all time and
  *                                for the last N days (you choose N)
+ *   /activity/remaining-usage    Remaining usage: how much of the Groq limits (and your
+ *                                own budgets) is left (see AiLimitsCard.tsx)
  *
  * Long lists load 50 rows at a time with a "Load more" button.
  */
-import { BarChart3, Coins, History } from 'lucide-react';
+import { BarChart3, Coins, Gauge, History } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { api, ApiError } from '../api';
@@ -23,6 +25,7 @@ const TABS = [
   { to: '', label: 'Activity', icon: History },
   { to: 'token-usage', label: 'Token usage', icon: Coins },
   { to: 'token-dashboard', label: 'Token dashboard', icon: BarChart3 },
+  { to: 'remaining-usage', label: 'Remaining usage', icon: Gauge },
 ];
 
 export function ActivityPage() {
@@ -165,6 +168,12 @@ export function TokenUsageTab() {
   );
 }
 
+// ---------- Tab 4: Remaining usage ----------
+
+export function RemainingUsageTab() {
+  return <AiLimitsCard />;
+}
+
 // ---------- Tab 3: Token dashboard ----------
 
 const QUICK_DAYS = [1, 7, 30, 90];
@@ -189,9 +198,6 @@ export function TokenDashboardTab() {
 
   return (
     <>
-      {/* How much of the Groq limits (and your own budgets) is left. */}
-      <AiLimitsCard />
-
       <div className="card panel days-picker">
         <label htmlFor="days-input">Show tokens used in the last</label>
         <input
