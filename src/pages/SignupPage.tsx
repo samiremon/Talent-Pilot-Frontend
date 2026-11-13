@@ -6,10 +6,11 @@
  *   - by the server, which also checks the email's domain really exists
  *     ("rahim@gmial.com" -> "Did you mean gmail.com?")
  * Server problems are shown under the field they belong to.
- * On success you're logged in straight away.
+ * On success we email a 6-digit code and go to /verify-email: the account only works once
+ * the code is entered, so made-up addresses can never be used.
  */
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { AuthLayout, Divider, GoogleButton, PasswordInput, looksLikeEmail, useProviders } from '../auth/AuthParts';
@@ -18,6 +19,7 @@ type Field = 'name' | 'email' | 'password';
 
 export function SignupPage() {
   const { signup } = useAuth();
+  const navigate = useNavigate();
   const providers = useProviders();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
@@ -47,8 +49,12 @@ export function SignupPage() {
 
     setSubmitting(true);
     try {
-      await signup(form.name.trim(), form.email.trim(), form.password);
-      // Logged in: App.tsx switches to the dashboard.
+      const result = await signup(form.name.trim(), form.email.trim(), form.password);
+      if (result.needsVerification) {
+        const query = new URLSearchParams({ email: result.email, ...(result.emailSent ? {} : { unsent: '1' }) });
+        navigate(`/verify-email?${query.toString()}`);
+      }
+      // Otherwise we're logged in and App.tsx switches to the dashboard.
     } catch (err) {
       if (err instanceof ApiError) {
         // e.g. INVALID_EMAIL / EMAIL_TAKEN come with the field they belong to.

@@ -2,7 +2,7 @@
  * Top of the app.
  *   1. While we ask the backend who's logged in -> "Loading…"
  *   2. Not logged in -> the signed-out pages:
- *        /login  /signup  /forgot-password  /reset-password?token=...
+ *        /login  /signup  /verify-email?email=...  /forgot-password  /reset-password?token=...
  *      (any other address goes to /login)
  *   3. Logged in -> the app frame (AppShell) with the page for the current address
  *      (/login and /signup then just go to the dashboard)
@@ -35,6 +35,7 @@ import { LoginPage } from './pages/LoginPage';
 import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordResetPages';
 import { ProfilePage } from './pages/ProfilePage';
 import { SignupPage } from './pages/SignupPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { JobsPage } from './pages/JobsPage';
 import { NewJobPage } from './pages/NewJobPage';
 import { CandidatesPage, NotFoundPage, OutreachPage } from './pages/SimplePages';
@@ -57,6 +58,7 @@ export function App() {
       <Routes>
         <Route path="login" element={<LoginPage />} />
         <Route path="signup" element={<SignupPage />} />
+        <Route path="verify-email" element={<VerifyEmailPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         {/* Anything else (including "/") -> log in. */}
@@ -71,6 +73,7 @@ export function App() {
       <Route path="login" element={<Navigate to="/" replace />} />
       <Route path="signup" element={<Navigate to="/" replace />} />
       <Route path="forgot-password" element={<Navigate to="/" replace />} />
+      <Route path="verify-email" element={<Navigate to="/" replace />} />
       {/* A reset link opened while logged in still works. */}
       <Route path="reset-password" element={<ResetPasswordPage />} />
       {/* Every page below is shown inside the app frame (top bar, sidebar, chat). */}

@@ -11,7 +11,7 @@
  * On success the app switches to the dashboard by itself (App.tsx watches the login status).
  */
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { AuthLayout, Divider, GoogleButton, PasswordInput, friendlyAuthError, useProviders } from '../auth/AuthParts';
@@ -24,6 +24,7 @@ interface DemoCredentials {
 
 export function LoginPage() {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const providers = useProviders();
   const [params] = useSearchParams();
   const [email, setEmail] = useState('');
@@ -63,6 +64,12 @@ export function LoginPage() {
       await login(email, password);
       // Success: nothing else to do here, App.tsx shows the dashboard.
     } catch (err) {
+      // Right password but the email was never confirmed: go enter the code.
+      if (err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED') {
+        const unverified = (err.details as { email?: string } | undefined)?.email ?? email;
+        navigate(`/verify-email?${new URLSearchParams({ email: unverified, from: 'login' }).toString()}`);
+        return;
+      }
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
       setSubmitting(false);
     }

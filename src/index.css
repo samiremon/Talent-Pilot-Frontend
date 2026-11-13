@@ -241,3 +241,9 @@ a { color: var(--accent-text); }
   border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
 }
 .field label { font-size: 0.875rem; font-weight: 600; }
+
+/* Big, spaced-out digits for the 6-digit email code. */
+.field .code-input {
+  font-size: 1.5rem; letter-spacing: 0.5em; text-align: center; font-variant-numeric: tabular-nums;
+  padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface);
+}
