@@ -228,3 +228,27 @@
 /* Delete card: red header strip so it can't be mistaken for anything else. */
 .job-card--danger .job-card__header { background: #7f1d1d; }
 .job-card--danger.job-card--pending { border-left-color: var(--bad); }
+
+/* 📎 attach button inside the message box. */
+.chat__attach {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center;
+  border: 0; border-radius: 9px; background: transparent; color: var(--muted);
+}
+.chat__attach:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.chat__attach:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* "Which job?" picker above the message box. */
+.attach-picker {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px;
+  padding: 8px 10px; border: 1px dashed var(--accent); border-radius: 10px; background: var(--accent-weak);
+}
+.attach-picker__file { font-size: 12px; font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.attach-picker select { flex: 1; min-width: 140px; padding: 5px 8px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); font-size: 12px; }
+
+/* Import CSV card: counts + preview. */
+.import-counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.import-counts div { padding: 6px; border-radius: 6px; background: var(--surface); border: 1px solid var(--border); text-align: center; }
+.import-counts dt { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.import-counts dd { margin: 0; font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.import-counts--good dd { color: var(--ok); }
+.import-preview { margin: 0; padding-left: 16px; font-size: 12px; display: grid; gap: 2px; }

@@ -9,15 +9,21 @@
  *   - Confirming a card changes data, so it tells the rest of the app to reload
  *     (see notifyDataChanged in useApi.ts).
  *
+ * 📎 Attach: pick a CSV of candidates. On a job's page it's for that job; elsewhere a small
+ * "Which job?" picker appears first. The AI answers with an "Import CSV" card to confirm
+ * (nothing is imported before that).
+ *
  * The parent (AppShell) decides whether it's docked, expanded or minimized. When minimized
  * the panel is only HIDDEN, not removed, so the conversation is still there when it reopens.
  */
-import { Bot, Maximize2, Minimize2, Minus, Send } from 'lucide-react';
+import { Bot, Maximize2, Minimize2, Minus, Paperclip, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
-import { api, ApiError } from '../api';
+import { api, API_BASE, ApiError } from '../api';
+import type { Job } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { notifyDataChanged } from '../useApi';
 import { JobDeleteCard, JobEditCard } from './ActionCards';
+import { ImportCsvCard } from './ImportCsvCard';
 import { JobCard, type ActionCard, type DecisionResult } from './JobCard';
 import { RichText } from './RichText';
 import type { ChatMode } from './useChatPanel';
@@ -76,6 +82,52 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages, thinking]);
+
+  // ---------- 📎 Attach a CSV ----------
+  const fileRef = useRef<HTMLInputElement>(null);
+  // Chosen file waiting for "which job?" (only when no job page is open).
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [jobs, setJobs] = useState<Job[] | null>(null);
+  const [pickedJob, setPickedJob] = useState('');
+
+  function chooseFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // so the same file can be picked again later
+    if (!file) return;
+    if (jobId) {
+      void attach(file, jobId);
+      return;
+    }
+    // Not on a job page: ask which job it's for.
+    setPendingFile(file);
+    api<{ jobs: Job[] }>('/jobs')
+      .then((res) => {
+        setJobs(res.jobs);
+        setPickedJob(res.jobs[0]?.id ?? '');
+      })
+      .catch(() => setJobs([]));
+  }
+
+  async function attach(file: File, forJob: string) {
+    setPendingFile(null);
+    setThinking(true);
+    try {
+      // A file upload: multipart form data, so fetch directly (api() sends JSON).
+      const form = new FormData();
+      form.append('jobId', forJob);
+      form.append('file', file);
+      const res = await fetch(`${API_BASE}/chat/attachments/csv`, { method: 'POST', body: form, credentials: 'same-origin' });
+      const data = (await res.json().catch(() => ({}))) as { messages?: ChatMessage[]; error?: { message?: string } };
+      if (!res.ok || !data.messages) throw new ApiError(res.status, 'UPLOAD', data.error?.message ?? 'Could not read the file.');
+      setMessages((current) => [...current, ...data.messages!]);
+      onAiMessage();
+    } catch (err) {
+      const reason = err instanceof ApiError ? err.message : 'Could not reach the server.';
+      setMessages((current) => [...current, { id: `error-${Date.now()}`, role: 'assistant', text: reason, card: null, failed: true }]);
+    } finally {
+      setThinking(false);
+    }
+  }
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -194,6 +246,7 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
               {message.card?.type === 'create_job' && <JobCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'update_job' && <JobEditCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'delete_job' && <JobDeleteCard card={message.card} onDecided={handleDecided} />}
+              {message.card?.type === 'import_csv' && <ImportCsvCard card={message.card} onDecided={handleDecided} />}
             </div>
           </div>
         ))}
@@ -217,7 +270,49 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
             </button>
           ))}
         </div>
+        {/* "Which job is this CSV for?" (only when the file was chosen outside a job page). */}
+        {pendingFile && (
+          <div className="attach-picker" role="group" aria-label="Choose the job for this CSV">
+            <span className="attach-picker__file">📎 {pendingFile.name}</span>
+            {jobs === null ? (
+              <span className="muted small">Loading jobs…</span>
+            ) : jobs.length === 0 ? (
+              <span className="muted small">Create a job first, then attach the CSV.</span>
+            ) : (
+              <>
+                <label className="sr-only" htmlFor="attach-job">
+                  Job
+                </label>
+                <select id="attach-job" value={pickedJob} onChange={(e) => setPickedJob(e.target.value)}>
+                  {jobs.map((j) => (
+                    <option key={j.id} value={j.id}>
+                      {j.jobCode} · {j.title}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="button button--small" onClick={() => void attach(pendingFile, pickedJob)} disabled={!pickedJob}>
+                  Attach
+                </button>
+              </>
+            )}
+            <button type="button" className="icon-button" onClick={() => setPendingFile(null)} aria-label="Remove attachment">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         <form className="chat__form" onSubmit={handleSubmit}>
+          <input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={chooseFile} />
+          <button
+            type="button"
+            className="chat__attach"
+            onClick={() => fileRef.current?.click()}
+            disabled={thinking}
+            aria-label="Attach a CSV of candidates"
+            title="Attach a CSV of candidates"
+          >
+            <Paperclip size={18} />
+          </button>
           <label htmlFor="chat-input" className="sr-only">
             Message TalentPilot
           </label>
