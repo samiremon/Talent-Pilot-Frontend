@@ -308,19 +308,15 @@ export function JobCandidatesTab() {
               Rank
             </th>
             <th scope="col">Score</th>
-            <th scope="col">Candidate</th>
-            <th scope="col">Profile</th>
+            <th scope="col" className="candidate-col">Candidate</th>
             <th scope="col">Why</th>
             <th scope="col">Status</th>
-            <th scope="col" className="row-actions">
-              <span className="sr-only">Actions</span>
-            </th>
           </tr>
         </thead>
         <tbody>
           {shown.length === 0 && (
             <tr>
-              <td colSpan={8} className="muted table__empty">
+              <td colSpan={6} className="muted table__empty">
                 {query
                   ? `No candidate named "${search.trim()}"${top ? ` in the top ${top}` : ''}${emailFilter !== 'all' ? ` with the email filter on` : ''}.`
                   : emailFilter === 'found'
@@ -356,24 +352,24 @@ export function JobCandidatesTab() {
               <td>
                 <div className="table__title">{c.name}</div>
                 <div className="muted small">{orUnknown(c.headline)}</div>
-                <div className="muted small">{c.email ?? 'Email unknown'}</div>
-              </td>
-              <td className="profile-cell">
-                {/* Their LinkedIn (or GitHub, Stack Overflow, ...) page, in a new tab. */}
-                {c.profileUrl ? (
-                  <a
-                    href={c.profileUrl}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                    title={c.profileUrl}
-                  >
-                    {profileSite(c.profileUrl)} <ExternalLink size={12} aria-hidden="true" />
-                  </a>
-                ) : (
-                  <span className="muted">–</span>
-                )}
+                {/* Contact: their profile (LinkedIn, GitHub, ...) in a new tab, and their email. */}
+                <div className="small candidate-contact">
+                  {c.profileUrl ? (
+                    <a
+                      href={c.profileUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                      title={c.profileUrl}
+                    >
+                      {profileSite(c.profileUrl)} <ExternalLink size={11} aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <span className="muted">No profile link</span>
+                  )}
+                </div>
+                <div className="small muted candidate-email">{c.email ?? 'Email unknown'}</div>
               </td>
               <td>
                 <div>{c.scoreReason ?? <span className="muted">Not scored yet</span>}</div>
@@ -386,34 +382,6 @@ export function JobCandidatesTab() {
               </td>
               <td>
                 <StatusChip status={c.status} />
-              </td>
-              <td className="row-actions">
-                <button
-                  type="button"
-                  className="icon-button"
-                  aria-label={`Edit ${c.name}'s email and profile link`}
-                  title="Edit email / profile link"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setEditing(c);
-                  }}
-                  onKeyDown={(event) => event.stopPropagation()}
-                >
-                  <Pencil size={16} />
-                </button>
-                <button
-                  type="button"
-                  className="icon-button icon-button--danger"
-                  aria-label={`Remove ${c.name}`}
-                  title="Remove candidate"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    deleteCandidate.ask(c);
-                  }}
-                  onKeyDown={(event) => event.stopPropagation()}
-                >
-                  <Trash2 size={16} />
-                </button>
               </td>
             </tr>
           ))}

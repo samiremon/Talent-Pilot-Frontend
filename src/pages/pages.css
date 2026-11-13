@@ -588,3 +588,9 @@ a.table__title:hover { color: var(--accent-text); }
 .email-step__edit input, .email-step__edit textarea { width: 100%; font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
 .email-step__save { display: flex; align-items: center; gap: 8px; }
 .email-step__read p { margin: 4px 0 0; white-space: pre-wrap; font-size: 14px; }
+
+/* Candidate cell: name, title, "LinkedIn ↗", then the email on its own line. Wide enough
+   for a normal email on one line; a very long one wraps at the @ / dots, not mid-word. */
+.candidate-col { min-width: 230px; }
+.candidate-contact a { display: inline-flex; align-items: center; gap: 3px; }
+.candidate-email { overflow-wrap: break-word; word-break: normal; }
