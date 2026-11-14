@@ -2,7 +2,7 @@
  * Left navigation. On phones it's a drawer that slides in (see layout.css).
  * NavLink marks the link of the current page as "active" so it's highlighted.
  */
-import { Briefcase, History, LayoutDashboard, Mail, Users, type LucideIcon } from 'lucide-react';
+import { Briefcase, CalendarDays, History, LayoutDashboard, Mail, type LucideIcon } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 interface NavItem {
@@ -14,7 +14,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/jobs', label: 'Jobs', icon: Briefcase },
-  { to: '/candidates', label: 'Candidates', icon: Users },
+  { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/outreach', label: 'Outreach', icon: Mail },
   { to: '/activity', label: 'Activity', icon: History },
 ];

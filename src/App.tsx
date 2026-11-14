@@ -13,7 +13,7 @@
  *   /jobs/new              Create a job by hand
  *   /jobs/:jobId/edit      Edit a job
  *   /jobs/:jobId[/tab]     One job, with tabs (see pages/JobPage.tsx)
- *   /candidates            All candidates
+ *   /calendar              Team calendar: meeting hours, busy and booked calls
  *   /outreach              Email campaigns
  *   /outreach/:jobId[/replies]  One job's Emails / Replies (see pages/OutreachPage.tsx)
  *   /profile               Change your name / password
@@ -40,7 +40,8 @@ import { SignupPage } from './pages/SignupPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { JobsPage } from './pages/JobsPage';
 import { EditJobPage, NewJobPage } from './pages/NewJobPage';
-import { CandidatesPage, NotFoundPage, OutreachPage } from './pages/SimplePages';
+import { CalendarPage } from './pages/CalendarPage';
+import { NotFoundPage, OutreachPage } from './pages/SimplePages';
 
 export function App() {
   const { status } = useAuth();
@@ -91,7 +92,7 @@ export function App() {
           <Route path="emails" element={<JobEmailsTab />} />
           <Route path="activity" element={<JobActivityTab />} />
         </Route>
-        <Route path="candidates" element={<CandidatesPage />} />
+        <Route path="calendar" element={<CalendarPage />} />
         <Route path="outreach" element={<OutreachPage />} />
         {/* One job's outreach: /outreach/:jobId (Emails) or /outreach/:jobId/replies. */}
         <Route path="outreach/:jobId/:tab?" element={<OutreachPage />} />

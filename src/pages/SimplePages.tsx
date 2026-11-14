@@ -1,23 +1,10 @@
 /**
- * Pages that are just a header + message for now: Candidates, Outreach, and "not found".
- * Each shows its empty state until the backend provides data (next steps).
+ * Small pages: just "not found" now. (Candidates became the Calendar page; the Outreach page
+ * grew into its own file.)
  */
-import { Compass, Users } from 'lucide-react';
+import { Compass } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { EmptyState, PageHeader } from '../components/PageParts';
-
-export function CandidatesPage() {
-  return (
-    <>
-      <PageHeader title="Candidates" subtitle="Everyone found or uploaded, across all jobs." />
-      <div className="card">
-        <EmptyState icon={Users} title="No candidates yet">
-          Candidates appear here after TalentPilot searches for them or you upload a CSV.
-        </EmptyState>
-      </div>
-    </>
-  );
-}
+import { EmptyState } from '../components/PageParts';
 
 // The Outreach page grew into its own file (job list + Emails / Replies tabs).
 export { OutreachPage } from './OutreachPage';

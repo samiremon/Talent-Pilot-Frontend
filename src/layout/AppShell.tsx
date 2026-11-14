@@ -27,7 +27,7 @@ function currentJobId(pathname: string): string | undefined {
 function describePage(pathname: string): string {
   if (pathname.startsWith('/jobs/')) return 'A job';
   if (pathname.startsWith('/jobs')) return 'Jobs';
-  if (pathname.startsWith('/candidates')) return 'Candidates';
+  if (pathname.startsWith('/calendar')) return 'Calendar';
   if (pathname.startsWith('/outreach')) return 'Outreach';
   if (pathname.startsWith('/activity')) return 'Activity';
   if (pathname.startsWith('/profile')) return 'Profile';

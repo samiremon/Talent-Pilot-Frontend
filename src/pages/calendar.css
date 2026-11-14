@@ -1,0 +1,175 @@
+/* Calendar page: the week grid (hours x days) and the upcoming calls. */
+
+.calendar__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.calendar__nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.calendar__title {
+  margin-left: 8px;
+}
+.calendar__legend {
+  display: flex;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.calendar__legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--border-strong);
+}
+.swatch--free {
+  background: var(--ok-bg);
+}
+.swatch--busy {
+  background: var(--border);
+}
+.swatch--booked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* On a phone the week scrolls sideways inside the card, never the whole page. */
+.calendar__scroll {
+  overflow-x: auto;
+}
+.calendar__grid {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: separate;
+  border-spacing: 6px;
+  table-layout: fixed;
+}
+.calendar__grid th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  padding: 4px;
+}
+.calendar__grid .calendar__corner,
+.calendar__grid .calendar__hour {
+  width: 96px;
+  text-align: left;
+  white-space: nowrap;
+}
+.calendar__grid td {
+  padding: 0;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.slot:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+.slot:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.slot--free {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-color: transparent;
+}
+.slot--free:hover {
+  border-color: var(--ok);
+}
+.slot--busy {
+  background: var(--border);
+  color: var(--text);
+  background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(127, 127, 127, 0.12) 6px 12px);
+}
+.slot--busy:hover {
+  border-color: var(--border-strong);
+}
+.slot--booked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.slot--booked:hover {
+  background: var(--accent-hover);
+}
+.slot--past {
+  background: transparent;
+  color: var(--muted);
+  border-style: dashed;
+  cursor: default;
+}
+.slot__name {
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.slot__meta {
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.calendar-upcoming {
+  margin-top: 16px;
+}
+.calendar-upcoming__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.calendar-upcoming__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+.calendar-upcoming__item:hover {
+  border-color: var(--accent);
+}
+.calendar-upcoming__when {
+  font-weight: 600;
+  min-width: 150px;
+}
