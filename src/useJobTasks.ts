@@ -26,7 +26,7 @@ import { notifyDataChanged } from './useApi';
 export interface JobTask {
   id: string;
   jobId: string;
-  type: 'score_candidates' | 'source_candidates' | 'draft_outreach' | 'send_outreach';
+  type: 'score_candidates' | 'source_candidates' | 'draft_outreach' | 'send_outreach' | 'process_reply';
   status: 'queued' | 'running' | 'done' | 'failed';
   progress: { total: number; done: number; found: number; duplicates: number; failed: number };
   message: string;

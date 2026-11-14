@@ -22,6 +22,7 @@ import { useDeleteJob } from '../components/useDeleteJob';
 import { useDeleteCandidate } from '../components/useDeleteCandidate';
 import { useStatusChange } from '../components/useStatusChange';
 import { EmailsTab } from './EmailsTab';
+import { RepliesTab } from './RepliesTab';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Segmented, TopPicker } from '../components/Segmented';
 import { EditContactDialog } from '../components/EditContactDialog';
@@ -435,19 +436,8 @@ export function JobPipelineTab() {
 
 /** Inbox: replies list on the left, the selected conversation + AI draft on the right. */
 export function JobRepliesTab() {
-  return (
-    <div className="card inbox">
-      <div className="inbox__list">
-        <div className="inbox__list-header">Replies</div>
-        <EmptyState icon={Inbox} title="No replies yet">
-          Candidate replies will be listed here, labelled by the AI.
-        </EmptyState>
-      </div>
-      <EmptyState icon={Mail} title="Select a reply">
-        You'll see the conversation and the AI's drafted answer, ready to approve, edit or discard.
-      </EmptyState>
-    </div>
-  );
+  const { job } = useJob();
+  return <RepliesTab jobId={job.id} />;
 }
 
 export function JobEmailsTab() {

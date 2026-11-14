@@ -629,3 +629,40 @@ a.table__title:hover { color: var(--accent-text); }
 /* Countdowns ("in 2:43") and the campaign's "Next: ..." line. */
 .countdown { font-variant-numeric: tabular-nums; color: var(--accent-text); font-weight: 600; }
 .campaign__next { margin-top: 6px; font-size: 14px; }
+
+/* ---------- Replies tab ---------- */
+.replies-tab { display: grid; gap: 14px; }
+.reply-list { list-style: none; margin: 0; padding: 0; max-height: 620px; overflow: auto; }
+.reply-item {
+  display: grid; gap: 4px; width: 100%; padding: 10px 14px; text-align: left; cursor: pointer;
+  border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font: inherit;
+}
+.reply-item:hover { background: var(--surface-2); }
+.reply-item--active { background: var(--accent-weak); box-shadow: inset 3px 0 0 var(--accent); }
+.reply-item__top { display: flex; justify-content: space-between; gap: 8px; }
+.reply-item__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.reply-item__summary { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.reply-item__response--draft { color: var(--warn); font-weight: 600; }
+.reply-item__meeting { display: inline-flex; align-items: center; gap: 3px; color: var(--ok); font-weight: 600; }
+/* The AI's label for a reply. */
+.reply-label { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); }
+.reply-label--interested, .reply-label--wants_meeting { background: var(--ok-bg); color: var(--ok); border-color: var(--ok); }
+.reply-label--question { background: var(--accent-weak); color: var(--accent-text); border-color: var(--accent); }
+.reply-label--not_interested, .reply-label--unsubscribe, .reply-label--failed { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+.reply-detail { padding: 16px 18px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.reply-detail__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.reply-detail__head h3 { margin: 0 0 2px; }
+.reply-detail__message { padding: 10px 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--border); }
+.reply-detail__message p, .reply-detail__response p { margin: 6px 0 0; white-space: pre-wrap; }
+.reply-detail__ai { display: grid; gap: 6px; }
+.reply-detail__ai p { margin: 0; }
+.reply-detail__ai-top { display: flex; align-items: center; gap: 8px; }
+.reply-detail__facts { margin: 0; padding-left: 18px; font-size: 14px; color: var(--text-2); }
+.reply-detail__booked { color: var(--ok); font-weight: 600; list-style: none; margin-left: -18px; display: flex; align-items: center; gap: 4px; }
+.reply-detail__response { display: grid; gap: 8px; }
+.reply-detail__response h4 { margin: 0; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.reply-detail__response input, .reply-detail__response textarea { width: 100%; font: inherit; font-size: 14px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
+.reply-detail__response--sent { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ok); background: var(--ok-bg); }
+.reply-examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip--active { background: var(--accent-weak); border-color: var(--accent); color: var(--accent-text); }
+.form-label { font-size: 14px; font-weight: 600; }

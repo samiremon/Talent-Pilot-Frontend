@@ -266,3 +266,6 @@
 .status-pick label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; cursor: pointer; }
 .status-pick__off { opacity: 0.6; }
 .status-pick__reason { display: block; margin-left: 22px; font-size: 12px; color: var(--bad); }
+
+/* The candidate's own words on a reply card. */
+.reply-quote { margin: 6px 0 10px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 6px 6px 0; font-size: 13px; white-space: pre-wrap; }

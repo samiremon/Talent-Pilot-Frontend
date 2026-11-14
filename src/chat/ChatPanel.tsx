@@ -22,7 +22,7 @@ import { api, API_BASE, ApiError } from '../api';
 import type { Job } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { notifyDataChanged } from '../useApi';
-import { AddCandidateCard, ApproveCampaignCard, CreateCampaignCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
+import { AddCandidateCard, ApproveCampaignCard, CreateCampaignCard, SendReplyCard, SimulateReplyCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
 import { ImportCsvCard } from './ImportCsvCard';
 import { JobCard, type ActionCard, type DecisionResult } from './JobCard';
 import { RichText } from './RichText';
@@ -78,6 +78,43 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
         if (!(err instanceof DOMException && err.name === 'AbortError')) setStatus('offline');
       });
     return () => controller.abort();
+  }, []);
+
+  // Messages the server posts on its own (e.g. "Priya replied: Wants a meeting", "Priya
+  // booked a call"): fetched when something changes in the app, when you come back to the
+  // tab, and every 20 s. Only NEW messages are added; nothing you see is replaced.
+  useEffect(() => {
+    let busy = false;
+    async function pickUpNew() {
+      if (busy || document.visibilityState === 'hidden') return;
+      busy = true;
+      try {
+        const data = await api<{ messages: ChatMessage[] }>('/chat/messages');
+        setMessages((current) => {
+          const known = new Set(current.map((m) => m.id));
+          const fresh = data.messages.filter((m) => !known.has(m.id));
+          if (fresh.length === 0) return current;
+          // Cards already on screen keep their state; fresh ones are added at the end.
+          const updated = current.map((m) => {
+            const server = data.messages.find((s) => s.id === m.id);
+            return server?.card && m.card && server.card.status !== m.card.status ? { ...m, card: server.card } : m;
+          });
+          return [...updated, ...fresh];
+        });
+      } catch {
+        // offline for a moment: try again next time
+      } finally {
+        busy = false;
+      }
+    }
+    const timer = setInterval(pickUpNew, 20_000);
+    window.addEventListener('talentpilot:data-changed', pickUpNew);
+    document.addEventListener('visibilitychange', pickUpNew);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('talentpilot:data-changed', pickUpNew);
+      document.removeEventListener('visibilitychange', pickUpNew);
+    };
   }, []);
 
   // Keep the newest message in view.
@@ -258,6 +295,8 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
               {message.card?.type === 'update_job' && <JobEditCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'delete_job' && <JobDeleteCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'import_csv' && <ImportCsvCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
+              {message.card?.type === 'send_reply' && <SendReplyCard card={message.card} onDecided={handleDecided} />}
+              {message.card?.type === 'simulate_reply' && <SimulateReplyCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'create_campaign' && <CreateCampaignCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
               {message.card?.type === 'approve_campaign' && <ApproveCampaignCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'change_status' && <StatusChangeCard card={message.card} onDecided={handleDecided} />}

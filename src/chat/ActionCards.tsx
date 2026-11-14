@@ -4,6 +4,8 @@
  *   <JobEditCard>    "Edit JOB-0007": each changed field as  old → new  (the new values can
  *                    still be adjusted), then Confirm / Cancel
  *   <JobDeleteCard>  red card: "Delete JOB-0007? 23 candidates will be removed." Confirm / Cancel
+ *   <SendReplyCard>   a candidate replied: their message + the AI's drafted answer (editable) -> Send
+ *   <SimulateReplyCard> "pretend Priya answered this" (stands in for a real inbox) -> Confirm
  *   <CreateCampaignCard> outreach: who (ticked; only Accepted with an email) + single / Day 0,3,7
  *                    -> the AI drafts -> posts a preview with an <ApproveCampaignCard>
  *   <ApproveCampaignCard> "Approve & send 6 emails" (nothing is sent before this)
@@ -24,7 +26,7 @@
  * POST /api/chat/actions/:id/confirm|cancel, which runs the same code as the Edit and
  * Delete buttons on the Jobs page.
  */
-import { ArrowRightLeft, Check, Mail, PencilLine, RefreshCw, Search, Send, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
+import { ArrowRightLeft, Check, Mail, MessageSquareReply, PencilLine, RefreshCw, Search, Send, Trash2, UserMinus, UserPlus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api';
@@ -956,6 +958,120 @@ export function ApproveCampaignCard({ card, onDecided }: { card: ActionCard; onD
         <Link className="job-card__open" to={`/jobs/${payload.jobId}/emails`}>
           {pending ? 'Check or edit the drafts first →' : 'Open the Emails tab →'}
         </Link>
+      </div>
+    </section>
+  );
+}
+
+const REPLY_LABELS: Record<string, string> = {
+  interested: 'Interested',
+  not_interested: 'Not interested',
+  question: 'Question',
+  wants_meeting: 'Wants a meeting',
+  unsubscribe: 'Unsubscribe',
+};
+
+/** A candidate replied: their message, the AI's label, and the drafted answer (editable) -> Send. */
+export function SendReplyCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as { jobId: string; jobCode?: string; candidateName?: string; label?: string; theirReply?: string; subject?: string; body?: string };
+  const [subject, setSubject] = useState(payload.subject ?? '');
+  const [body, setBody] = useState(payload.body ?? '');
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Answer to a candidate's reply">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <Send size={16} aria-hidden="true" /> Answer {payload.candidateName}
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          {payload.jobCode} · {payload.label ? (REPLY_LABELS[payload.label] ?? payload.label) : 'Reply'}
+        </p>
+        {payload.theirReply && <blockquote className="reply-quote">{payload.theirReply}</blockquote>}
+        <label className="job-card__field">
+          <span>Subject</span>
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} disabled={!pending} />
+        </label>
+        <label className="job-card__field">
+          <span>Response</span>
+          <textarea className="job-card__textarea" rows={6} value={body} onChange={(e) => setBody(e.target.value)} disabled={!pending} />
+        </label>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending ? (
+          <div className="job-card__actions">
+            <button type="button" className="button" onClick={() => decide('confirm', { subject, body })} disabled={busy !== null || !body.trim()}>
+              <Send size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Sending…' : 'Send'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Not now
+            </button>
+          </div>
+        ) : (
+          <Link className="job-card__open" to={`/jobs/${payload.jobId}/replies`}>
+            Open the Replies tab →
+          </Link>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** "Simulate a reply from Priya": stands in for a real inbox. Confirm -> the AI handles it. */
+export function SimulateReplyCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as { jobId: string; jobCode?: string; candidateName?: string; body: string };
+  const [body, setBody] = useState(payload.body);
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+  const result = card.result as { taskId?: string | null } | null;
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Simulate a candidate reply">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <MessageSquareReply size={16} aria-hidden="true" /> Simulate reply
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          From {payload.candidateName} · {payload.jobCode}
+        </p>
+        <label className="job-card__field">
+          <span>Their reply</span>
+          <textarea className="job-card__textarea" rows={4} value={body} onChange={(e) => setBody(e.target.value)} disabled={!pending} />
+        </label>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending ? (
+          <div className="job-card__actions">
+            <button type="button" className="button" onClick={() => decide('confirm', { body })} disabled={busy !== null || !body.trim()}>
+              <Check size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Sending…' : 'Confirm'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Cancel
+            </button>
+          </div>
+        ) : (
+          card.status === 'confirmed' && (
+            <>
+              {result?.taskId && <LiveScoring jobId={payload.jobId} taskId={result.taskId} />}
+              <Link className="job-card__open" to={`/jobs/${payload.jobId}/replies`}>
+                Open the Replies tab →
+              </Link>
+            </>
+          )
+        )}
       </div>
     </section>
   );
