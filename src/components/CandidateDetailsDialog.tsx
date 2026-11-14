@@ -66,9 +66,11 @@ interface Props {
   onEdit?: (candidate: Candidate) => void;
   /** Shows the allowed next statuses as buttons (Accept, Reject, Interviewed, ...). */
   onMove?: (candidate: Candidate, to: CandidateStatus) => void;
+  /** Shows a "Send email" button (one-off email, e.g. a rejection). */
+  onEmail?: (candidate: Candidate) => void;
 }
 
-export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, onRemove, onEdit, onMove }: Props) {
+export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, onRemove, onEdit, onMove, onEmail }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -119,6 +121,15 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
           )}
 
           {/* Review / pipeline: only the moves the rules allow from the current status. */}
+          {/* Rejected: the one way back is to the status they had before. */}
+          {onMove && candidate.status === 'rejected' && candidate.restoreTo && (
+            <div className="status-actions" role="group" aria-label="Change status">
+              <span className="muted small">Rejected by mistake?</span>
+              <button type="button" className="button button--small" onClick={() => onMove(candidate, candidate.restoreTo!)}>
+                Restore to {STATUS_LABELS[candidate.restoreTo]}
+              </button>
+            </div>
+          )}
           {onMove && ALLOWED_MOVES[candidate.status].length > 0 && (
             <div className="status-actions" role="group" aria-label="Change status">
               <span className="muted small">Move to:</span>
@@ -239,8 +250,13 @@ export function CandidateDetailsDialog({ candidate, rank, rankedCount, onClose, 
             ))
           )}
 
-          {(onRemove || onEdit) && (
+          {(onRemove || onEdit || onEmail) && (
             <div className="details-dialog__footer">
+              {onEmail && candidate.email && !candidate.doNotEmail && candidate.status !== 'unsubscribed' && (
+                <button type="button" className="button button--ghost" onClick={() => onEmail(candidate)}>
+                  <Mail size={16} aria-hidden="true" /> Send email
+                </button>
+              )}
               {onEdit && (
                 <button type="button" className="button button--ghost" onClick={() => onEdit(candidate)}>
                   <PencilLine size={16} aria-hidden="true" /> Edit contact

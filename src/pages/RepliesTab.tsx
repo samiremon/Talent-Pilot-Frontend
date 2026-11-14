@@ -1,20 +1,23 @@
 /**
- * The job's Replies tab: candidates' answers to outreach, read by the AI.
+ * The job's Replies tab: one CONVERSATION per candidate, start to end.
  *
- *   [ Simulate reply ]       (stands in for a real inbox, as the brief allows)
- *   ┌ inbox ──────────────────┐┌ the selected reply ─────────────────────────────────┐
- *   │ Priya Das               ││ Their message: "Sounds great, Thursday works?"       │
- *   │ Wants a meeting · Draft ││ AI: Wants a meeting (95%) · Contacted → Replied →    │
- *   │ Rahim Uddin             ││     Interested · 2 follow-ups stopped                │
- *   │ Not interested · Sent   ││ Response (draft): [subject] [text with booking link] │
- *   └─────────────────────────┘│ [ Send ] [ Discard ]          Meeting: booked Thu 10:00│
+ *   [ Search by name ]  [ Simulate reply ]
+ *   ┌ conversations ──────────┐┌ Priya Das ───────────────────────────────────────────┐
+ *   │ Priya Das         2 min ││ You  · First email           "Opportunity for ..."   │
+ *   │ Wants a meeting · Booked││ Priya · reply   "Sounds great, Thursday?"            │
+ *   │ Rahim Uddin       1 h   ││   AI: Wants a meeting (95%) · Contacted → Interested │
+ *   │ Question · waiting      ││ You  · answer   "Hi Priya, pick a time: <link>"      │
+ *   └─────────────────────────┘│ 📅 Call booked: Sun 15 Nov, 14:00                    │
+ *                              │ Priya · reply   "Also, is it remote?"  -> draft answer │
+ *                              │                 [subject] [text]  [Send] [Discard]   │
  *                              └──────────────────────────────────────────────────────┘
  *
- * The AI classifies each reply, moves the status, stops follow-ups and drafts a response;
- * nothing is sent until you press Send. Same backend functions as the AI's chat cards.
+ * The AI reads each reply, moves the status, stops follow-ups and drafts an answer; nothing
+ * is sent until you press Send. Opened from the bell: /jobs/:id/replies?candidate=<id>.
  */
-import { AlertTriangle, CalendarCheck, Check, Inbox, Mail, MessageSquareReply, Send, Trash2, X } from 'lucide-react';
+import { AlertTriangle, CalendarCheck, Check, Inbox, Mail, MessageSquareReply, Search, Send, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api, ApiError } from '../api';
 import { LoadState, StatusChip } from '../components/DataParts';
 import { EmptyState } from '../components/PageParts';
@@ -22,18 +25,16 @@ import { timeAgo } from '../format';
 import type { CandidateStatus } from '../types';
 import { notifyDataChanged, useApi } from '../useApi';
 import { useJobTasks } from '../useJobTasks';
+import { stepLabel } from './EmailsTab';
 
 type Label = 'interested' | 'not_interested' | 'question' | 'wants_meeting' | 'unsubscribe';
 
-interface Reply {
+type ReplyEvent = {
+  kind: 'reply';
+  at: string;
   id: string;
-  candidateId: string;
-  candidateName: string;
-  candidateStatus: CandidateStatus | null;
-  from: string;
   subject: string;
   body: string;
-  receivedAt: string;
   status: 'processing' | 'done' | 'failed';
   error: string | null;
   label: Label | null;
@@ -42,13 +43,33 @@ interface Reply {
   flagged: boolean;
   statusPath: string[];
   followUpsStopped: number;
-  response: { subject: string | null; body: string | null; status: 'none' | 'draft' | 'sending' | 'sent' | 'discarded' | 'failed'; sentAt: string | null; autoSent: boolean; error: string | null };
-  meeting: { status: 'offered' | 'booked' | 'cancelled'; slot: string | null; bookedAt: string | null } | null;
+  response: { subject: string | null; body: string | null; status: 'none' | 'draft' | 'sending' | 'sent' | 'discarded' | 'failed'; error: string | null };
+};
+type Event =
+  | { kind: 'sent'; at: string; id: string; subject: string; body: string; step: number; day: number }
+  | ReplyEvent
+  | { kind: 'response'; at: string; id: string; subject: string | null; body: string | null; autoSent: boolean }
+  | { kind: 'meeting'; at: string; id: string; slot: string | null }
+  | { kind: 'email'; at: string; id: string; subject: string; body: string; purpose: string };
+
+interface Conversation {
+  candidateId: string;
+  candidateName: string;
+  candidateStatus: CandidateStatus | null;
+  email: string | null;
+  lastAt: string;
+  replies: number;
+  label: Label | null;
+  summary: string | null;
+  processing: boolean;
+  waiting: boolean;
+  booked: boolean;
+  events: Event[];
 }
 
 interface RepliesResponse {
   canReply: { id: string; name: string; status: CandidateStatus }[];
-  replies: Reply[];
+  conversations: Conversation[];
 }
 
 export const LABELS: Record<Label, string> = {
@@ -57,15 +78,6 @@ export const LABELS: Record<Label, string> = {
   question: 'Question',
   wants_meeting: 'Wants a meeting',
   unsubscribe: 'Unsubscribe',
-};
-
-const RESPONSE_LABELS: Record<Reply['response']['status'], string> = {
-  none: 'No response',
-  draft: 'Response waiting for you',
-  sending: 'Sending…',
-  sent: 'Response sent',
-  discarded: 'Not answered',
-  failed: 'Response failed',
 };
 
 /** Ready-made replies for the simulator: one per kind. */
@@ -85,55 +97,67 @@ function slotText(iso: string): string {
 export function RepliesTab({ jobId }: { jobId: string }) {
   const { data, error, loading } = useApi<RepliesResponse>(`/jobs/${jobId}/replies`);
   useJobTasks(jobId); // live: a reply being processed updates the list when it's done
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const selectedId = params.get('candidate');
+  const [search, setSearch] = useState('');
   const [simulating, setSimulating] = useState(false);
 
   if (!data) return <LoadState loading={loading} error={error} />;
-  const selected = data.replies.find((r) => r.id === selectedId) ?? data.replies[0] ?? null;
+  const query = search.trim().toLowerCase();
+  const shown = data.conversations.filter((c) => !query || c.candidateName.toLowerCase().includes(query));
+  const selected = data.conversations.find((c) => c.candidateId === selectedId) ?? shown[0] ?? null;
+  const select = (candidateId: string) => setParams({ candidate: candidateId }, { replace: true });
 
   return (
     <div className="replies-tab">
-      <div className="emails-tab__new">
-        <button type="button" className="button" onClick={() => setSimulating(true)} disabled={data.canReply.length === 0} title={data.canReply.length ? undefined : 'Only candidates who were emailed can reply'}>
+      <div className="table-filters">
+        <label className="table-filters__search">
+          <Search size={16} aria-hidden="true" />
+          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name" aria-label="Search conversations by name" />
+        </label>
+        <button type="button" className="button" onClick={() => setSimulating(true)} disabled={data.canReply.length === 0} title={data.canReply.length ? 'Stands in for a real inbox' : 'Only candidates who were emailed can reply'}>
           <MessageSquareReply size={16} aria-hidden="true" /> Simulate reply
         </button>
-        <span className="muted small">Stands in for a real inbox: type what a candidate answered and the AI handles it.</span>
       </div>
 
       <div className="card inbox">
         <div className="inbox__list">
-          <div className="inbox__list-header">Replies ({data.replies.length})</div>
-          {data.replies.length === 0 ? (
+          <div className="inbox__list-header">
+            Conversations ({shown.length}
+            {query ? ` of ${data.conversations.length}` : ''})
+          </div>
+          {data.conversations.length === 0 ? (
             <EmptyState icon={Inbox} title="No replies yet">
-              When an emailed candidate replies, it shows up here, read and labelled by the AI.
+              When an emailed candidate replies, their conversation shows up here, read and labelled by the AI.
             </EmptyState>
+          ) : shown.length === 0 ? (
+            <p className="muted inbox__none">No conversation with "{search.trim()}".</p>
           ) : (
             <ul className="reply-list">
-              {data.replies.map((r) => (
-                <li key={r.id}>
-                  <button type="button" className={`reply-item${selected?.id === r.id ? ' reply-item--active' : ''}`} onClick={() => setSelectedId(r.id)}>
+              {shown.map((c) => (
+                <li key={c.candidateId}>
+                  <button type="button" className={`reply-item${selected?.candidateId === c.candidateId ? ' reply-item--active' : ''}`} onClick={() => select(c.candidateId)}>
                     <span className="reply-item__top">
-                      <strong>{r.candidateName}</strong>
-                      <span className="muted small">{timeAgo(r.receivedAt)}</span>
+                      <strong>{c.candidateName}</strong>
+                      <span className="muted small">{timeAgo(c.lastAt)}</span>
                     </span>
                     <span className="reply-item__meta">
-                      {r.status === 'processing' ? (
+                      {c.processing ? (
                         <span className="muted small">
-                          <span className="task-progress__dot" aria-hidden="true" /> The AI is reading it…
+                          <span className="task-progress__dot" aria-hidden="true" /> The AI is reading a reply…
                         </span>
-                      ) : r.label ? (
-                        <span className={`reply-label reply-label--${r.label}`}>{LABELS[r.label]}</span>
                       ) : (
-                        <span className="reply-label reply-label--failed">Failed</span>
+                        c.label && <span className={`reply-label reply-label--${c.label}`}>{LABELS[c.label]}</span>
                       )}
-                      {r.status === 'done' && <span className={`muted small reply-item__response reply-item__response--${r.response.status}`}>{RESPONSE_LABELS[r.response.status]}</span>}
-                      {r.meeting?.status === 'booked' && (
+                      {c.waiting && <span className="small reply-item__response--draft">Answer waiting for you</span>}
+                      {c.booked && (
                         <span className="small reply-item__meeting">
                           <CalendarCheck size={12} aria-hidden="true" /> Booked
                         </span>
                       )}
+                      {c.replies > 1 && <span className="muted small">{c.replies} replies</span>}
                     </span>
-                    {r.summary && <span className="muted small reply-item__summary">{r.summary}</span>}
+                    {c.summary && <span className="muted small reply-item__summary">{c.summary}</span>}
                   </button>
                 </li>
               ))}
@@ -141,29 +165,137 @@ export function RepliesTab({ jobId }: { jobId: string }) {
           )}
         </div>
         {selected ? (
-          <ReplyDetail key={selected.id} jobId={jobId} reply={selected} />
+          <ConversationView key={selected.candidateId} jobId={jobId} conversation={selected} />
         ) : (
-          <EmptyState icon={Mail} title="Select a reply">
-            You'll see the conversation and the AI's drafted answer, ready to send, edit or discard.
+          <EmptyState icon={Mail} title="Select a conversation">
+            You'll see everything with that candidate, start to end, and any drafted answer ready to send.
           </EmptyState>
         )}
       </div>
 
-      {simulating && <SimulateDialog jobId={jobId} people={data.canReply} onClose={() => setSimulating(false)} onSent={(id) => setSelectedId(id)} />}
+      {simulating && <SimulateDialog jobId={jobId} people={data.canReply} onClose={() => setSimulating(false)} onSent={select} />}
     </div>
   );
 }
 
-function ReplyDetail({ jobId, reply }: { jobId: string; reply: Reply }) {
+/** The whole conversation with one candidate, oldest first. */
+function ConversationView({ jobId, conversation }: { jobId: string; conversation: Conversation }) {
+  const first = conversation.candidateName.split(' ')[0];
+  const endRef = useRef<HTMLDivElement>(null);
+  // Open at the newest message.
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [conversation.events.length]);
+
+  return (
+    <div className="reply-detail">
+      <header className="reply-detail__head">
+        <div>
+          <h3>{conversation.candidateName}</h3>
+          <span className="muted small">{conversation.email}</span>
+        </div>
+        {conversation.candidateStatus && <StatusChip status={conversation.candidateStatus} />}
+      </header>
+
+      <ol className="thread">
+        {conversation.events.map((e) => {
+          if (e.kind === 'sent') {
+            return (
+              <li key={e.id} className="thread__msg thread__msg--us">
+                <div className="thread__meta">
+                  You · {stepLabel(e.step, e.day)} · {timeAgo(e.at)}
+                </div>
+                <strong>{e.subject}</strong>
+                <p>{e.body}</p>
+              </li>
+            );
+          }
+          if (e.kind === 'response') {
+            return (
+              <li key={e.id} className="thread__msg thread__msg--us">
+                <div className="thread__meta">
+                  You · answer{e.autoSent ? ' (sent automatically)' : ''} · {timeAgo(e.at)}
+                </div>
+                <strong>{e.subject}</strong>
+                <p>{e.body}</p>
+              </li>
+            );
+          }
+          if (e.kind === 'email') {
+            return (
+              <li key={e.id} className="thread__msg thread__msg--us">
+                <div className="thread__meta">
+                  You · {e.purpose === 'rejection' ? 'rejection email' : 'email'} · {timeAgo(e.at)}
+                </div>
+                <strong>{e.subject}</strong>
+                <p>{e.body}</p>
+              </li>
+            );
+          }
+          if (e.kind === 'meeting') {
+            return (
+              <li key={e.id} className="thread__event">
+                <CalendarCheck size={14} aria-hidden="true" /> {first} booked a call{e.slot ? `: ${slotText(e.slot)}` : ''} · {timeAgo(e.at)}
+              </li>
+            );
+          }
+          return <ReplyBlock key={e.id} jobId={jobId} reply={e} first={first ?? ''} />;
+        })}
+      </ol>
+      <div ref={endRef} />
+    </div>
+  );
+}
+
+/** One reply from them: their words, the AI's reading, and the drafted answer if it's waiting. */
+function ReplyBlock({ jobId, reply, first }: { jobId: string; reply: ReplyEvent; first: string }) {
+  return (
+    <li className="thread__msg thread__msg--them">
+      <div className="thread__meta">
+        {first} · reply · {timeAgo(reply.at)}
+      </div>
+      <p>{reply.body}</p>
+      {reply.status === 'processing' && (
+        <p className="muted small">
+          <span className="task-progress__dot" aria-hidden="true" /> The AI is reading it…
+        </p>
+      )}
+      {reply.status === 'failed' && <p className="form-error">The AI couldn't process this reply: {reply.error}</p>}
+      {reply.status === 'done' && reply.label && (
+        <div className="thread__ai">
+          <span className={`reply-label reply-label--${reply.label}`}>{LABELS[reply.label]}</span>
+          {reply.confidence !== null && <span className="muted small">{Math.round(reply.confidence * 100)}% sure</span>}
+          {reply.summary && <span className="small">{reply.summary}</span>}
+          {(reply.statusPath.length > 0 || reply.followUpsStopped > 0) && (
+            <span className="muted small thread__facts">
+              {reply.statusPath.length > 0 && <>Status: {reply.statusPath.join(' → ')}. </>}
+              {reply.followUpsStopped > 0 && (
+                <>
+                  {reply.followUpsStopped} follow-up{reply.followUpsStopped === 1 ? '' : 's'} stopped.
+                </>
+              )}
+            </span>
+          )}
+          {reply.flagged && (
+            <span className="flag-banner small">
+              <AlertTriangle size={14} aria-hidden="true" /> This reply contained instructions for the AI. They were ignored; read it yourself. Never answered automatically.
+            </span>
+          )}
+          {reply.label === 'unsubscribe' && <span className="muted small">They asked not to be contacted: no answer, no more emails.</span>}
+        </div>
+      )}
+      {(reply.response.status === 'draft' || reply.response.status === 'failed') && <DraftAnswer jobId={jobId} reply={reply} />}
+      {reply.response.status === 'discarded' && <p className="muted small">You chose not to answer this one.</p>}
+    </li>
+  );
+}
+
+/** The AI's drafted answer, editable, with Send / Discard. Nothing goes out before Send. */
+function DraftAnswer({ jobId, reply }: { jobId: string; reply: ReplyEvent }) {
   const [subject, setSubject] = useState(reply.response.subject ?? '');
   const [body, setBody] = useState(reply.response.body ?? '');
   const [busy, setBusy] = useState<'send' | 'discard' | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  // The AI finished the draft after this opened: show it (unless the recruiter is editing).
-  useEffect(() => {
-    setSubject((s) => s || (reply.response.subject ?? ''));
-    setBody((b) => b || (reply.response.body ?? ''));
-  }, [reply.response.subject, reply.response.body]);
+  const [error, setError] = useState<string | null>(reply.response.error);
 
   async function act(kind: 'send' | 'discard') {
     setBusy(kind);
@@ -179,101 +311,29 @@ function ReplyDetail({ jobId, reply }: { jobId: string; reply: Reply }) {
   }
 
   return (
-    <div className="reply-detail">
-      <header className="reply-detail__head">
-        <div>
-          <h3>{reply.candidateName}</h3>
-          <span className="muted small">
-            {reply.from} · {new Date(reply.receivedAt).toLocaleString()}
-          </span>
-        </div>
-        {reply.candidateStatus && <StatusChip status={reply.candidateStatus} />}
-      </header>
-
-      <section className="reply-detail__message">
-        <span className="muted small">Their message{reply.subject ? `: ${reply.subject}` : ''}</span>
-        <p>{reply.body}</p>
-      </section>
-
-      {reply.status === 'processing' && (
-        <p className="muted">
-          <span className="task-progress__dot" aria-hidden="true" /> The AI is reading the reply…
+    <div className="reply-detail__response thread__draft">
+      <h4>Drafted answer (nothing is sent until you press Send)</h4>
+      <input value={subject} onChange={(e) => setSubject(e.target.value)} aria-label="Answer subject" placeholder="Subject" />
+      <textarea rows={6} value={body} onChange={(e) => setBody(e.target.value)} aria-label="Answer text" />
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
         </p>
       )}
-      {reply.status === 'failed' && <p className="form-error">The AI couldn't process this reply: {reply.error}</p>}
-
-      {reply.status === 'done' && reply.label && (
-        <section className="reply-detail__ai">
-          <div className="reply-detail__ai-top">
-            <span className={`reply-label reply-label--${reply.label}`}>{LABELS[reply.label]}</span>
-            {reply.confidence !== null && <span className="muted small">{Math.round(reply.confidence * 100)}% sure</span>}
-          </div>
-          {reply.summary && <p>{reply.summary}</p>}
-          {reply.flagged && (
-            <p className="flag-banner">
-              <AlertTriangle size={16} aria-hidden="true" />
-              <span>This reply contained instructions for the AI. They were ignored; please read it yourself. It's never answered automatically.</span>
-            </p>
-          )}
-          <ul className="reply-detail__facts">
-            {reply.statusPath.length > 0 && <li>Status: {reply.statusPath.join(' → ')}</li>}
-            {reply.followUpsStopped > 0 && (
-              <li>
-                {reply.followUpsStopped} follow-up email{reply.followUpsStopped === 1 ? '' : 's'} stopped
-              </li>
-            )}
-            {reply.meeting?.status === 'booked' && reply.meeting.slot && (
-              <li className="reply-detail__booked">
-                <CalendarCheck size={14} aria-hidden="true" /> Meeting booked: {slotText(reply.meeting.slot)}
-              </li>
-            )}
-            {reply.meeting?.status === 'offered' && <li>Booking link offered: waiting for them to pick a time</li>}
-          </ul>
-        </section>
-      )}
-
-      {reply.status === 'done' && reply.response.status === 'none' && (
-        <p className="muted">They asked not to be contacted, so there's no response and no more emails.</p>
-      )}
-
-      {(reply.response.status === 'draft' || reply.response.status === 'failed') && (
-        <section className="reply-detail__response">
-          <h4>Response (draft: nothing is sent until you press Send)</h4>
-          <input value={subject} onChange={(e) => setSubject(e.target.value)} aria-label="Response subject" placeholder="Subject" />
-          <textarea rows={7} value={body} onChange={(e) => setBody(e.target.value)} aria-label="Response text" />
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
-          <div className="form-actions">
-            <button type="button" className="button button--ghost" onClick={() => act('discard')} disabled={busy !== null}>
-              <Trash2 size={16} aria-hidden="true" /> Discard
-            </button>
-            <button type="button" className="button" onClick={() => act('send')} disabled={busy !== null || !body.trim()}>
-              <Send size={16} aria-hidden="true" /> {busy === 'send' ? 'Sending…' : 'Send'}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {reply.response.status === 'sent' && (
-        <section className="reply-detail__response reply-detail__response--sent">
-          <h4>
-            <Check size={14} aria-hidden="true" /> Response sent {reply.response.sentAt && timeAgo(reply.response.sentAt)}
-            {reply.response.autoSent && ' (automatically)'}
-          </h4>
-          <strong>{reply.response.subject}</strong>
-          <p>{reply.response.body}</p>
-        </section>
-      )}
-      {reply.response.status === 'discarded' && <p className="muted">You chose not to answer this one.</p>}
+      <div className="form-actions">
+        <button type="button" className="button button--ghost" onClick={() => act('discard')} disabled={busy !== null}>
+          <Trash2 size={16} aria-hidden="true" /> Discard
+        </button>
+        <button type="button" className="button" onClick={() => act('send')} disabled={busy !== null || !body.trim()}>
+          <Send size={16} aria-hidden="true" /> {busy === 'send' ? 'Sending…' : 'Send'}
+        </button>
+      </div>
     </div>
   );
 }
 
 /** "Simulate reply": pick an emailed candidate, type (or pick) what they answered. */
-function SimulateDialog({ jobId, people, onClose, onSent }: { jobId: string; people: RepliesResponse['canReply']; onClose: () => void; onSent: (replyId: string) => void }) {
+function SimulateDialog({ jobId, people, onClose, onSent }: { jobId: string; people: RepliesResponse['canReply']; onClose: () => void; onSent: (candidateId: string) => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [candidateId, setCandidateId] = useState(people[0]?.id ?? '');
   const [text, setText] = useState(EXAMPLES[1]!.text);
@@ -287,9 +347,9 @@ function SimulateDialog({ jobId, people, onClose, onSent }: { jobId: string; peo
     setBusy(true);
     setError(null);
     try {
-      const r = await api<{ replyId: string }>(`/jobs/${jobId}/candidates/${candidateId}/simulate-reply`, { method: 'POST', body: { body: text } });
+      await api(`/jobs/${jobId}/candidates/${candidateId}/simulate-reply`, { method: 'POST', body: { body: text } });
       notifyDataChanged();
-      onSent(r.replyId);
+      onSent(candidateId);
       onClose();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not simulate the reply.');
@@ -309,7 +369,7 @@ function SimulateDialog({ jobId, people, onClose, onSent }: { jobId: string; peo
             <X size={18} />
           </button>
         </header>
-        <p className="muted small">As if this candidate answered your email. The AI reads it, updates their status, stops their follow-ups and drafts a response for you.</p>
+        <p className="muted small">As if this candidate answered your email. The AI reads it, updates their status, stops their follow-ups and drafts an answer for you.</p>
         <div className="form-row">
           <label htmlFor="sim-candidate">From</label>
           <select id="sim-candidate" value={candidateId} onChange={(e) => setCandidateId(e.target.value)}>
@@ -344,7 +404,7 @@ function SimulateDialog({ jobId, people, onClose, onSent }: { jobId: string; peo
             Cancel
           </button>
           <button type="button" className="button" onClick={submit} disabled={busy || !candidateId || !text.trim()}>
-            {busy ? 'Sending…' : 'Simulate reply'}
+            <Check size={16} aria-hidden="true" /> {busy ? 'Sending…' : 'Simulate reply'}
           </button>
         </div>
       </div>

@@ -22,7 +22,7 @@ import { api, API_BASE, ApiError } from '../api';
 import type { Job } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { notifyDataChanged } from '../useApi';
-import { AddCandidateCard, ApproveCampaignCard, CreateCampaignCard, SendReplyCard, SimulateReplyCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
+import { AddCandidateCard, ApproveCampaignCard, CreateCampaignCard, SendEmailCard, SendReplyCard, SimulateReplyCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
 import { ImportCsvCard } from './ImportCsvCard';
 import { JobCard, type ActionCard, type DecisionResult } from './JobCard';
 import { RichText } from './RichText';
@@ -93,12 +93,18 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
         setMessages((current) => {
           const known = new Set(current.map((m) => m.id));
           const fresh = data.messages.filter((m) => !known.has(m.id));
-          if (fresh.length === 0) return current;
-          // Cards already on screen keep their state; fresh ones are added at the end.
+          // Cards decided somewhere else (e.g. an answer sent from the Replies tab) take the
+          // server's state: "Done" instead of a Send button on something that's already out.
+          let changed = false;
           const updated = current.map((m) => {
             const server = data.messages.find((s) => s.id === m.id);
-            return server?.card && m.card && server.card.status !== m.card.status ? { ...m, card: server.card } : m;
+            if (server?.card && m.card && server.card.status !== m.card.status) {
+              changed = true;
+              return { ...m, card: server.card };
+            }
+            return m;
           });
+          if (!changed && fresh.length === 0) return current;
           return [...updated, ...fresh];
         });
       } catch {
@@ -295,6 +301,7 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
               {message.card?.type === 'update_job' && <JobEditCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'delete_job' && <JobDeleteCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'import_csv' && <ImportCsvCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
+              {message.card?.type === 'send_email' && <SendEmailCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'send_reply' && <SendReplyCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'simulate_reply' && <SimulateReplyCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'create_campaign' && <CreateCampaignCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}

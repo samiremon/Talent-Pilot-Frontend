@@ -26,6 +26,7 @@ import { RepliesTab } from './RepliesTab';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Segmented, TopPicker } from '../components/Segmented';
 import { EditContactDialog } from '../components/EditContactDialog';
+import { EmailCandidateDialog } from '../components/EmailCandidateDialog';
 import { api, ApiError } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
@@ -167,6 +168,8 @@ export function JobCandidatesTab() {
     await status.move([...picked], to);
     setPicked(new Set());
   }
+  // The candidate getting a one-off email (null = closed).
+  const [emailing, setEmailing] = useState<Candidate | null>(null);
   // The candidate whose email / profile link is being edited (null = closed).
   const [editing, setEditing] = useState<Candidate | null>(null);
 
@@ -381,7 +384,12 @@ export function JobCandidatesTab() {
         setSelected(null);
         setEditing(c);
       }}
+      onEmail={(c) => {
+        setSelected(null);
+        setEmailing(c);
+      }}
     />
+    <EmailCandidateDialog jobId={job.id} candidate={emailing} onClose={() => setEmailing(null)} />
     <EditContactDialog jobId={job.id} candidate={editing} onClose={() => setEditing(null)} />
     {deleteCandidate.dialog}
     </>
@@ -390,10 +398,26 @@ export function JobCandidatesTab() {
 
 /** Kanban board: one column per status, a card for each candidate in it. */
 export function JobPipelineTab() {
-  const { candidates } = useJob();
+  const { candidates: everyone } = useJob();
   const [selected, setSelected] = useState<Candidate | null>(null);
+  // Search by name (same box as on the Candidates tab): narrows every column.
+  const [search, setSearch] = useState('');
+  const query = search.trim().toLowerCase();
+  const candidates = query ? everyone.filter((c) => c.name.toLowerCase().includes(query)) : everyone;
   const columns = [...PIPELINE_STATUSES, ...EXIT_STATUSES];
   return (
+    <>
+    <div className="table-filters">
+      <label className="table-filters__search">
+        <Search size={16} aria-hidden="true" />
+        <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name" aria-label="Search the pipeline by name" />
+      </label>
+      {query && (
+        <span className="muted small">
+          Showing {candidates.length} of {everyone.length}
+        </span>
+      )}
+    </div>
     <div className="board" role="list" aria-label="Pipeline board">
       {columns.map((status) => {
         const inColumn = candidates.filter((c) => c.status === status.id);
@@ -431,6 +455,7 @@ export function JobPipelineTab() {
       })}
       <CandidateDetailsDialog candidate={selected} onClose={() => setSelected(null)} />
     </div>
+    </>
   );
 }
 

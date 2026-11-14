@@ -9,9 +9,9 @@
  */
 import { Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { timeAgo } from '../format';
+import { percent, timeAgo } from '../format';
 import { PIPELINE_STATUSES, STATUS_LABELS } from '../pipeline';
-import type { ActivityItem, CandidateStatus, StatusCounts } from '../types';
+import type { ActivityItem, CandidateStatus, FunnelStage } from '../types';
 import { EmptyState } from './PageParts';
 
 export function LoadState({ loading, error }: { loading: boolean; error: string | null }) {
@@ -90,20 +90,41 @@ export function ActivityList({ items, showJob = false }: { items: ActivityItem[]
   );
 }
 
-/** One bar per pipeline status; bar length is relative to the biggest count. */
-export function Funnel({ counts }: { counts: StatusCounts }) {
+/**
+ * One bar per pipeline stage; bar length is relative to the biggest count.
+ *
+ * Works for both kinds of numbers:
+ *   - today's statuses (StatusCounts), or
+ *   - the cumulative funnel from the dashboard (FunnelCounts: who ever reached each stage).
+ * With `showConversion`, each row also says what share of the stage above got this far
+ * (e.g. Replied "50%" = half of the contacted people replied).
+ */
+export function Funnel({ counts, showConversion = false }: { counts: Record<FunnelStage, number>; showConversion?: boolean }) {
   const largest = Math.max(1, ...PIPELINE_STATUSES.map((s) => counts[s.id]));
   return (
-    <div className="funnel">
-      {PIPELINE_STATUSES.map((status) => (
-        <div key={status.id} className="funnel__row">
-          <span>{status.label}</span>
-          <span className="funnel__track">
-            <span className="funnel__bar" style={{ width: `${(counts[status.id] / largest) * 100}%` }} />
-          </span>
-          <span className="funnel__count">{counts[status.id]}</span>
-        </div>
-      ))}
+    <div className={showConversion ? 'funnel funnel--conversion' : 'funnel'}>
+      {PIPELINE_STATUSES.map((status, index) => {
+        const previous = index > 0 ? counts[PIPELINE_STATUSES[index - 1]!.id] : null;
+        // Share of the stage above that made it here ("–" when the stage above is empty).
+        const conversion = previous === null ? null : previous > 0 ? counts[status.id] / previous : null;
+        return (
+          <div key={status.id} className="funnel__row">
+            <span>{status.label}</span>
+            <span className="funnel__track">
+              <span className="funnel__bar" style={{ width: `${(counts[status.id] / largest) * 100}%` }} />
+            </span>
+            <span className="funnel__count">{counts[status.id]}</span>
+            {showConversion && (
+              <span
+                className="funnel__conversion"
+                title={previous === null ? 'Everyone starts here' : `Share of the ${PIPELINE_STATUSES[index - 1]!.label} stage that got this far`}
+              >
+                {previous === null ? '' : percent(conversion)}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

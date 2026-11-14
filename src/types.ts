@@ -59,6 +59,10 @@ export interface Candidate {
   evidence: string[];
   /** The profile tried to give the AI instructions (ignored). Shown in red. */
   flagged?: boolean;
+  /** Rejected people: the status "Restore" takes them back to. */
+  restoreTo?: CandidateStatus | null;
+  /** They unsubscribed: never email them. */
+  doNotEmail?: boolean;
   /** Their seniority as the AI read it from their text (null = not scored yet). */
   level?: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'unknown' | null;
   status: CandidateStatus;
@@ -84,14 +88,54 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+/** The funnel stages (the main path, no side exits), as the backend counts them. */
+export type FunnelStage =
+  | 'sourced'
+  | 'accepted'
+  | 'contacted'
+  | 'replied'
+  | 'interested'
+  | 'meeting_booked'
+  | 'interviewed'
+  | 'shortlisted'
+  | 'hired';
+
+/** How many candidates EVER reached each stage (a later rejection doesn't remove them). */
+export type FunnelCounts = Record<FunnelStage, number>;
+
+/** One job's dashboard numbers (a row of the per-job table). */
+export interface JobStatsRow {
+  id: string;
+  jobCode: string | null;
+  title: string;
+  status: string;
+  createdAt: string;
+  funnel: FunnelCounts;
+  current: StatusCounts;
+  totalCandidates: number;
+  /** replied ÷ contacted (null = nobody contacted yet) */
+  replyRate: number | null;
+  /** interested ÷ replied (null = nobody replied yet) */
+  interestedRate: number | null;
+  meetings: number;
+  hires: number;
+}
+
 export interface Overview {
   activeJobs: number;
   totalCandidates: number;
   hires: number;
+  meetings: number;
   replyRate: number | null;
+  interestedRate: number | null;
   aiTokens: { inputTokens: number; outputTokens: number };
+  /** Where candidates are right now. */
   counts: StatusCounts;
+  /** Cumulative funnel across all jobs. */
+  funnel: FunnelCounts;
   recentActivity: ActivityItem[];
+  /** Every job with its own funnel and rates, newest first. */
+  perJob: JobStatsRow[];
   jobs: { id: string; title: string; status: string; totalCandidates: number; hired: number }[];
 }
 
