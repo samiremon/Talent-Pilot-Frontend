@@ -59,6 +59,10 @@ export interface Candidate {
   evidence: string[];
   /** The profile tried to give the AI instructions (ignored). Shown in red. */
   flagged?: boolean;
+  /** Rejected people: the status "Restore" takes them back to. */
+  restoreTo?: CandidateStatus | null;
+  /** They unsubscribed: never email them. */
+  doNotEmail?: boolean;
   /** Their seniority as the AI read it from their text (null = not scored yet). */
   level?: 'intern' | 'junior' | 'mid' | 'senior' | 'lead' | 'unknown' | null;
   status: CandidateStatus;

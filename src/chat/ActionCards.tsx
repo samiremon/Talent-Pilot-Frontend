@@ -734,7 +734,7 @@ export function StatusChangeCard({ card, onDecided }: { card: ActionCard; onDeci
     jobCode?: string;
     title?: string;
     toLabel?: string;
-    candidates: { id: string; name: string; fromLabel: string; score: number | null; rank: number | null; allowed: boolean; reason: string | null }[];
+    candidates: { id: string; name: string; fromLabel: string; toLabel?: string | null; score: number | null; rank: number | null; allowed: boolean; reason: string | null }[];
   };
   const [ticked, setTicked] = useState<Set<string>>(() => new Set(payload.candidates.filter((c) => c.allowed).map((c) => c.id)));
   const { busy, error, decide } = useDecision(card, onDecided);
@@ -767,7 +767,7 @@ export function StatusChangeCard({ card, onDecided }: { card: ActionCard; onDeci
                 <strong>{c.name}</strong>
                 <span className="muted small">
                   {c.rank ? ` #${c.rank}` : ''}
-                  {c.score !== null ? ` · ${c.score}` : ''} · {c.fromLabel} → {payload.toLabel}
+                  {c.score !== null ? ` · ${c.score}` : ''} · {c.fromLabel} → {c.toLabel ?? payload.toLabel}
                 </span>
               </label>
               {!c.allowed && c.reason && <span className="status-pick__reason">{c.reason}</span>}
@@ -1071,6 +1071,55 @@ export function SimulateReplyCard({ card, onDecided }: { card: ActionCard; onDec
               </Link>
             </>
           )
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** "Email Priya": the AI's draft (editable) for one candidate -> Send. Nothing goes out before Send. */
+export function SendEmailCard({ card, onDecided }: { card: ActionCard; onDecided: (r: DecisionResult) => void }) {
+  const payload = card.payload as { jobId: string; jobCode?: string; candidateName?: string; to?: string; subject?: string; body?: string; purpose?: string };
+  const [subject, setSubject] = useState(payload.subject ?? '');
+  const [body, setBody] = useState(payload.body ?? '');
+  const { busy, error, decide } = useDecision(card, onDecided);
+  const pending = card.status === 'pending';
+
+  return (
+    <section className={`job-card job-card--${card.status}`} aria-label="Email to one candidate">
+      <header className="job-card__header">
+        <span className="job-card__title">
+          <Mail size={16} aria-hidden="true" /> Email {payload.candidateName}
+        </span>
+        <StateLabel status={card.status} />
+      </header>
+      <div className="job-card__body">
+        <p className="job-card__lead">
+          To {payload.to} · {payload.jobCode}
+          {payload.purpose && payload.purpose !== 'custom' ? ` · ${payload.purpose === 'rejection' ? 'Rejection' : 'Update'}` : ''}
+        </p>
+        <label className="job-card__field">
+          <span>Subject</span>
+          <input value={subject} onChange={(e) => setSubject(e.target.value)} disabled={!pending} />
+        </label>
+        <label className="job-card__field">
+          <span>Message</span>
+          <textarea className="job-card__textarea" rows={7} value={body} onChange={(e) => setBody(e.target.value)} disabled={!pending} />
+        </label>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+        {pending && (
+          <div className="job-card__actions">
+            <button type="button" className="button" onClick={() => decide('confirm', { subject, body })} disabled={busy !== null || !subject.trim() || !body.trim()}>
+              <Send size={16} aria-hidden="true" /> {busy === 'confirm' ? 'Sending…' : 'Send'}
+            </button>
+            <button type="button" className="button button--ghost" onClick={() => decide('cancel')} disabled={busy !== null}>
+              <X size={16} aria-hidden="true" /> Don't send
+            </button>
+          </div>
         )}
       </div>
     </section>

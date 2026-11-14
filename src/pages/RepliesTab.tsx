@@ -49,7 +49,8 @@ type Event =
   | { kind: 'sent'; at: string; id: string; subject: string; body: string; step: number; day: number }
   | ReplyEvent
   | { kind: 'response'; at: string; id: string; subject: string | null; body: string | null; autoSent: boolean }
-  | { kind: 'meeting'; at: string; id: string; slot: string | null };
+  | { kind: 'meeting'; at: string; id: string; slot: string | null }
+  | { kind: 'email'; at: string; id: string; subject: string; body: string; purpose: string };
 
 interface Conversation {
   candidateId: string;
@@ -214,6 +215,17 @@ function ConversationView({ jobId, conversation }: { jobId: string; conversation
               <li key={e.id} className="thread__msg thread__msg--us">
                 <div className="thread__meta">
                   You · answer{e.autoSent ? ' (sent automatically)' : ''} · {timeAgo(e.at)}
+                </div>
+                <strong>{e.subject}</strong>
+                <p>{e.body}</p>
+              </li>
+            );
+          }
+          if (e.kind === 'email') {
+            return (
+              <li key={e.id} className="thread__msg thread__msg--us">
+                <div className="thread__meta">
+                  You · {e.purpose === 'rejection' ? 'rejection email' : 'email'} · {timeAgo(e.at)}
                 </div>
                 <strong>{e.subject}</strong>
                 <p>{e.body}</p>

@@ -36,19 +36,20 @@ export const STATUS_LABELS = Object.fromEntries(
  * still checks every move, so a stale copy can never let a wrong move through.
  */
 export const ALLOWED_MOVES: Record<CandidateStatus, readonly CandidateStatus[]> = {
-  sourced: ['accepted', 'not_accepted'],
-  accepted: ['contacted', 'not_accepted'],
-  not_accepted: ['accepted'],
-  contacted: ['replied', 'unsubscribed'],
-  replied: ['interested', 'not_interested', 'meeting_booked', 'unsubscribed'],
-  interested: ['meeting_booked', 'not_interested', 'unsubscribed'],
-  not_interested: ['interested', 'unsubscribed'],
-  meeting_booked: ['interviewed', 'unsubscribed'],
+  sourced: ['accepted', 'not_accepted', 'rejected'],
+  accepted: ['contacted', 'not_accepted', 'rejected'],
+  not_accepted: ['accepted', 'rejected'],
+  contacted: ['replied', 'unsubscribed', 'rejected'],
+  replied: ['interested', 'not_interested', 'meeting_booked', 'unsubscribed', 'rejected'],
+  interested: ['meeting_booked', 'not_interested', 'unsubscribed', 'rejected'],
+  not_interested: ['interested', 'unsubscribed', 'rejected'],
+  meeting_booked: ['interviewed', 'unsubscribed', 'rejected'],
   interviewed: ['shortlisted', 'unsubscribed', 'rejected'],
   shortlisted: ['hired', 'unsubscribed', 'rejected'],
   hired: [],
+  // Rejected goes back only to the status before the rejection: Candidate.restoreTo.
   rejected: [],
-  unsubscribed: [],
+  unsubscribed: ['rejected'],
 };
 
 /** All statuses in pipeline order (for "Move to" menus). */

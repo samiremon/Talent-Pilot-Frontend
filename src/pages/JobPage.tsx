@@ -26,6 +26,7 @@ import { RepliesTab } from './RepliesTab';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Segmented, TopPicker } from '../components/Segmented';
 import { EditContactDialog } from '../components/EditContactDialog';
+import { EmailCandidateDialog } from '../components/EmailCandidateDialog';
 import { api, ApiError } from '../api';
 import { useJobTasks, type JobTask } from '../useJobTasks';
 import { EmptyState, PageHeader } from '../components/PageParts';
@@ -167,6 +168,8 @@ export function JobCandidatesTab() {
     await status.move([...picked], to);
     setPicked(new Set());
   }
+  // The candidate getting a one-off email (null = closed).
+  const [emailing, setEmailing] = useState<Candidate | null>(null);
   // The candidate whose email / profile link is being edited (null = closed).
   const [editing, setEditing] = useState<Candidate | null>(null);
 
@@ -381,7 +384,12 @@ export function JobCandidatesTab() {
         setSelected(null);
         setEditing(c);
       }}
+      onEmail={(c) => {
+        setSelected(null);
+        setEmailing(c);
+      }}
     />
+    <EmailCandidateDialog jobId={job.id} candidate={emailing} onClose={() => setEmailing(null)} />
     <EditContactDialog jobId={job.id} candidate={editing} onClose={() => setEditing(null)} />
     {deleteCandidate.dialog}
     </>

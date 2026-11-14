@@ -22,7 +22,7 @@ import { api, API_BASE, ApiError } from '../api';
 import type { Job } from '../types';
 import { useAuth } from '../auth/AuthContext';
 import { notifyDataChanged } from '../useApi';
-import { AddCandidateCard, ApproveCampaignCard, CreateCampaignCard, SendReplyCard, SimulateReplyCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
+import { AddCandidateCard, ApproveCampaignCard, CreateCampaignCard, SendEmailCard, SendReplyCard, SimulateReplyCard, DeleteAllCandidatesCard, DeleteCandidateCard, EditContactCard, StatusChangeCard, FindCandidatesCard, ScoreAgainCard, JobDeleteCard, JobEditCard } from './ActionCards';
 import { ImportCsvCard } from './ImportCsvCard';
 import { JobCard, type ActionCard, type DecisionResult } from './JobCard';
 import { RichText } from './RichText';
@@ -301,6 +301,7 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
               {message.card?.type === 'update_job' && <JobEditCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'delete_job' && <JobDeleteCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'import_csv' && <ImportCsvCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
+              {message.card?.type === 'send_email' && <SendEmailCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'send_reply' && <SendReplyCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'simulate_reply' && <SimulateReplyCard card={message.card} onDecided={handleDecided} />}
               {message.card?.type === 'create_campaign' && <CreateCampaignCard card={message.card} onDecided={handleDecided} onMessage={handleCardMessage} />}
