@@ -15,7 +15,8 @@ Every action can be done by asking the AI in the chat or by hand in the app. The
 2. [Architecture](#2-architecture)
 3. [How the agent and background jobs appear in the app](#3-how-the-agent-and-background-jobs-appear-in-the-app)
 4. [LLM, agent approach, done / mocked / skipped, trade-offs](#4-llm-agent-approach-done--mocked--skipped-trade-offs)
-5. [Development](#5-development)
+5. [Context window optimization](#5-context-window-optimization)
+6. [Development](#6-development)
 
 ---
 
@@ -173,9 +174,9 @@ These are covered in the **backend README**, where the AI runs:
 
 - [How the agent works](https://github.com/samiremon/Talent-Pilot-Backend#4-how-the-agent-works)
 - [How the background jobs work](https://github.com/samiremon/Talent-Pilot-Backend#5-how-the-background-jobs-work)
-- [Why this LLM and agent approach](https://github.com/samiremon/Talent-Pilot-Backend#6-why-this-llm-and-agent-approach): Groq with `gpt-oss-120b` for the chat and `gpt-oss-20b` for bulk work, one LangGraph agent with tools, and a small context window
-- [Done, mocked and skipped](https://github.com/samiremon/Talent-Pilot-Backend#7-done-mocked-and-skipped)
-- [Trade-offs](https://github.com/samiremon/Talent-Pilot-Backend#8-trade-offs)
+- [Why this LLM and agent approach](https://github.com/samiremon/Talent-Pilot-Backend#6-why-this-llm-and-agent-approach): Groq with `gpt-oss-120b` for the chat and `gpt-oss-20b` for bulk work, one LangGraph agent with tools
+- [Done, mocked and skipped](https://github.com/samiremon/Talent-Pilot-Backend#8-done-mocked-and-skipped)
+- [Trade-offs](https://github.com/samiremon/Talent-Pilot-Backend#9-trade-offs)
 
 **Frontend trade-offs:**
 
@@ -187,7 +188,54 @@ These are covered in the **backend README**, where the AI runs:
 
 ---
 
-## 5. Development
+## 5. Context window optimization
+
+Groq's free plan allows **8,000 tokens a minute** for the chat model, so every message to the AI is kept as small as possible without losing what it needs. (The AI runs in the backend; this is how it is done there.)
+
+**System prompt**
+
+- Kept short on purpose, because it is sent with every call.
+- Each rule is stated once.
+
+**Workspace summary**
+
+- The job on screen gets full detail; other jobs get one line each.
+- Activity is cut to the latest 8 lines.
+- The whole summary has a hard cap of about 3,000 characters, and the oldest lines are dropped first.
+
+**Data on demand, not up front**
+
+- Candidates aren't put in the prompt. The AI fetches them with tools, 10 at a time, one compact line each.
+- Name searches return at most 5 matches.
+
+**Chat history**
+
+- Only the recent conversation is sent.
+- Old long messages, such as a pasted job description, are shortened in the history.
+
+**Skipping model calls where code is enough**
+
+- Full lists (candidates, emails) go straight from the database to the recruiter, so they cost no output tokens and can't be invented.
+- Confirmation messages are built by code.
+- Web search queries are built from the job's fields without the AI.
+
+**Batching**
+
+- Candidates are scored 10 per call, so the job description is sent once per batch, not once per person.
+
+**Small, fixed answer formats**
+
+- Every AI task must return a fixed JSON shape, which keeps answers short.
+
+**Budget check before each call**
+
+- The app estimates the tokens needed and compares them with what Groq last reported as left.
+- It waits briefly if that is enough, or tells the recruiter how long to wait.
+- Every call's usage is shown on **Activity → Token usage**.
+
+---
+
+## 6. Development
 
 Requires **Node.js 20 or newer**, and the backend running on `http://localhost:4000` (see the backend README, *Development and tests*).
 
