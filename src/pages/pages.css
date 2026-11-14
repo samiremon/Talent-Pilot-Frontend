@@ -699,22 +699,7 @@ a.table__title:hover { color: var(--accent-text); }
 .thread__draft { margin-top: 8px; padding: 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--warn); }
 .inbox__none { padding: 14px; margin: 0; }
 
-/* ---------- Outreach page: job list (left) + the job's Emails / Replies tabs (right) ---------- */
+/* ---------- Outreach page: "← All jobs" link above a job's Emails / Replies ---------- */
 
-.outreach { display: grid; grid-template-columns: minmax(200px, 280px) minmax(0, 1fr); gap: 16px; align-items: start; }
-.outreach__jobs { overflow: hidden; position: sticky; top: 16px; }
-.outreach__jobs-header { padding: 12px 14px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 13px; }
-.outreach__jobs ul { list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px; max-height: 70vh; overflow-y: auto; }
-.outreach__job { display: grid; gap: 2px; padding: 9px 10px; border-radius: 8px; text-decoration: none; color: var(--text-2); border-left: 3px solid transparent; }
-.outreach__job:hover { background: var(--surface-2); color: var(--text); }
-.outreach__job--active { background: var(--accent-weak); color: var(--accent-text); border-left-color: var(--accent); }
-.outreach__job-title { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
-.outreach__detail { min-width: 0; }
-.outreach__detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
-.outreach__detail-title { margin: 0; font-size: 1.05rem; }
-.outreach__detail-head .button { display: inline-flex; align-items: center; gap: 4px; }
-@media (max-width: 900px) {
-  .outreach { grid-template-columns: minmax(0, 1fr); }
-  .outreach__jobs { position: static; }
-  .outreach__jobs ul { max-height: 220px; }
-}
+.back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--muted); text-decoration: none; margin-bottom: 8px; }
+.back-link:hover { color: var(--accent-text); }
