@@ -2,7 +2,7 @@
  * Pages that are just a header + message for now: Candidates, Outreach, and "not found".
  * Each shows its empty state until the backend provides data (next steps).
  */
-import { Compass, Mail, Users } from 'lucide-react';
+import { Compass, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { EmptyState, PageHeader } from '../components/PageParts';
 
@@ -19,18 +19,8 @@ export function CandidatesPage() {
   );
 }
 
-export function OutreachPage() {
-  return (
-    <>
-      <PageHeader title="Outreach" subtitle="Email campaigns and their results." />
-      <div className="card">
-        <EmptyState icon={Mail} title="No campaigns yet">
-          Ask TalentPilot to draft outreach for a job. Nothing is sent until you approve it.
-        </EmptyState>
-      </div>
-    </>
-  );
-}
+// The Outreach page grew into its own file (job list + Emails / Replies tabs).
+export { OutreachPage } from './OutreachPage';
 
 export function NotFoundPage() {
   return (
