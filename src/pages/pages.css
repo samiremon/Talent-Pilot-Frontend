@@ -44,6 +44,22 @@
 .funnel__bar { height: 100%; background: var(--accent); border-radius: 999px; }
 .funnel__count { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-2); }
 
+/* Dashboard: 6 headline numbers, the funnel's job menu, conversion %, and the per-job table. */
+.kpis--6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.panel__head .panel__title { margin: 0; }
+.panel__select select {
+  padding: 6px 10px; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--surface); max-width: 260px; font-size: 13px;
+}
+.funnel__intro { margin: 0 0 12px; }
+.funnel--conversion .funnel__row { grid-template-columns: 120px 1fr 36px 40px; }
+.funnel__conversion { text-align: right; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.funnel__rates { margin: 14px 0 4px; font-size: 13px; color: var(--text-2); }
+.funnel__exits { margin: 0; }
+.job-stats__row--selected td { background: var(--accent-weak); }
+.job-stats .button { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+
 /* ---------- Job page tabs ---------- */
 
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
@@ -80,12 +96,15 @@
 
 @media (max-width: 1200px) {
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpis--6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .grid-2 { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
   .inbox { grid-template-columns: minmax(0, 1fr); }
   .inbox__list { border-right: 0; border-bottom: 1px solid var(--border); }
   .funnel__row { grid-template-columns: 100px 1fr 28px; }
+  .funnel--conversion .funnel__row { grid-template-columns: 96px 1fr 28px 36px; }
+  .kpis--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ---------- Data display (scores, statuses, tables, activity) ---------- */
