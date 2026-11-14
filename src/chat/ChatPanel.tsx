@@ -93,12 +93,18 @@ export function ChatPanel({ mode, onMinimize, onToggleExpanded, onAiMessage, con
         setMessages((current) => {
           const known = new Set(current.map((m) => m.id));
           const fresh = data.messages.filter((m) => !known.has(m.id));
-          if (fresh.length === 0) return current;
-          // Cards already on screen keep their state; fresh ones are added at the end.
+          // Cards decided somewhere else (e.g. an answer sent from the Replies tab) take the
+          // server's state: "Done" instead of a Send button on something that's already out.
+          let changed = false;
           const updated = current.map((m) => {
             const server = data.messages.find((s) => s.id === m.id);
-            return server?.card && m.card && server.card.status !== m.card.status ? { ...m, card: server.card } : m;
+            if (server?.card && m.card && server.card.status !== m.card.status) {
+              changed = true;
+              return { ...m, card: server.card };
+            }
+            return m;
           });
+          if (!changed && fresh.length === 0) return current;
           return [...updated, ...fresh];
         });
       } catch {
