@@ -15,6 +15,7 @@
  *   /jobs/:jobId[/tab]     One job, with tabs (see pages/JobPage.tsx)
  *   /candidates            All candidates
  *   /outreach              Email campaigns
+ *   /outreach/:jobId[/replies]  One job's Emails / Replies (see pages/OutreachPage.tsx)
  *   /profile               Change your name / password
  *   /activity[/tab]        Activity log, token usage, token dashboard
  *   anything else          "Page not found"
@@ -92,6 +93,8 @@ export function App() {
         </Route>
         <Route path="candidates" element={<CandidatesPage />} />
         <Route path="outreach" element={<OutreachPage />} />
+        {/* One job's outreach: /outreach/:jobId (Emails) or /outreach/:jobId/replies. */}
+        <Route path="outreach/:jobId/:tab?" element={<OutreachPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="activity" element={<ActivityPage />}>
           <Route index element={<ActivityTab />} />
