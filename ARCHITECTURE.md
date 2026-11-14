@@ -45,7 +45,7 @@ There is no state-management library. Each page loads its own data, and shared s
 | `/jobs/:id/emails` | **Emails:** campaigns, drafts, send times and countdowns |
 | `/jobs/:id/activity` | Every change to the job, with undo |
 | `/calendar` | **Calendar:** meeting hours, busy hours, booked calls |
-| `/outreach` | Pick a job on the left; its Emails and Replies tabs on the right |
+| `/outreach` | All jobs in a table; click one to open its Emails and Replies |
 | `/activity` | Activity log, token usage, AI limits |
 | `/login`, `/signup`, `/verify-email`, `/forgot-password`, `/reset-password` | Accounts |
 
