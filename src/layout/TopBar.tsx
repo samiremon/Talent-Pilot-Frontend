@@ -3,6 +3,7 @@
  */
 import { ChevronDown, LogOut, Menu, Send, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { NotificationBell } from './NotificationBell';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
@@ -64,6 +65,7 @@ export function TopBar({ onToggleSidebar, sidebarOpen }: TopBarProps) {
         TalentPilot
       </Link>
 
+      <NotificationBell />
       <div className="topbar__right" ref={menuRef}>
         <button
           type="button"

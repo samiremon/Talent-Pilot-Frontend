@@ -390,10 +390,26 @@ export function JobCandidatesTab() {
 
 /** Kanban board: one column per status, a card for each candidate in it. */
 export function JobPipelineTab() {
-  const { candidates } = useJob();
+  const { candidates: everyone } = useJob();
   const [selected, setSelected] = useState<Candidate | null>(null);
+  // Search by name (same box as on the Candidates tab): narrows every column.
+  const [search, setSearch] = useState('');
+  const query = search.trim().toLowerCase();
+  const candidates = query ? everyone.filter((c) => c.name.toLowerCase().includes(query)) : everyone;
   const columns = [...PIPELINE_STATUSES, ...EXIT_STATUSES];
   return (
+    <>
+    <div className="table-filters">
+      <label className="table-filters__search">
+        <Search size={16} aria-hidden="true" />
+        <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name" aria-label="Search the pipeline by name" />
+      </label>
+      {query && (
+        <span className="muted small">
+          Showing {candidates.length} of {everyone.length}
+        </span>
+      )}
+    </div>
     <div className="board" role="list" aria-label="Pipeline board">
       {columns.map((status) => {
         const inColumn = candidates.filter((c) => c.status === status.id);
@@ -431,6 +447,7 @@ export function JobPipelineTab() {
       })}
       <CandidateDetailsDialog candidate={selected} onClose={() => setSelected(null)} />
     </div>
+    </>
   );
 }
 

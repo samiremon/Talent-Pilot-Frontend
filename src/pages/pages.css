@@ -666,3 +666,16 @@ a.table__title:hover { color: var(--accent-text); }
 .reply-examples { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip--active { background: var(--accent-weak); border-color: var(--accent); color: var(--accent-text); }
 .form-label { font-size: 14px; font-weight: 600; }
+
+/* Conversation view (Replies tab): our messages on the right, theirs on the left. */
+.thread { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; max-height: 68vh; overflow: auto; padding-right: 4px; }
+.thread__msg { max-width: 88%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); display: grid; gap: 4px; }
+.thread__msg p { margin: 0; white-space: pre-wrap; font-size: 14px; }
+.thread__msg--us { justify-self: end; background: var(--accent-weak); border-color: var(--accent); border-bottom-right-radius: 4px; }
+.thread__msg--them { justify-self: start; background: var(--surface-2); border-bottom-left-radius: 4px; }
+.thread__meta { font-size: 12px; color: var(--muted); }
+.thread__ai { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--border); }
+.thread__facts { flex-basis: 100%; }
+.thread__event { justify-self: center; display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ok); background: var(--ok-bg); }
+.thread__draft { margin-top: 8px; padding: 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--warn); }
+.inbox__none { padding: 14px; margin: 0; }

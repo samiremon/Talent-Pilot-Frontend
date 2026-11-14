@@ -143,3 +143,34 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar { transition: none; }
 }
+
+/* ---------- The notification bell ---------- */
+.bell { position: relative; margin-left: auto; }
+.bell + .topbar__right { margin-left: 0; }
+.bell__button { position: relative; }
+.bell__badge {
+  position: absolute; top: 2px; right: 0;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: #dc2626; color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+  box-shadow: 0 0 0 2px var(--top-bg, #111827);
+}
+.bell__menu {
+  position: absolute; right: 0; top: 44px; z-index: 50;
+  width: min(380px, calc(100vw - 24px)); max-height: 70vh; overflow: auto;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg);
+}
+.bell__head { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.bell__empty { margin: 0; padding: 18px 14px; color: var(--muted); font-size: 14px; }
+.bell__list { list-style: none; margin: 0; padding: 4px; }
+.bell__item {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start;
+  width: 100%; padding: 10px; border: 0; border-radius: 8px; text-align: left;
+  background: transparent; color: var(--text); font: inherit; font-size: 14px; cursor: pointer;
+}
+.bell__item:hover { background: var(--surface-2); }
+.bell__item--unread { background: var(--accent-weak); }
+.bell__icon { color: var(--accent-text); margin-top: 2px; }
+.bell__text { display: grid; gap: 2px; }
+.bell__meta { font-size: 12px; color: var(--muted); }
+.bell__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 6px; }
