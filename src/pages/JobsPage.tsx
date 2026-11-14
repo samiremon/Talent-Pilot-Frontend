@@ -6,6 +6,9 @@
  *   hovering highlights it clearly.
  * - Each row has Edit and Delete buttons. Delete asks for confirmation first.
  *   (The AI can do both too, via a card you confirm in the chat.)
+ *
+ * The table itself is <JobsTable>, also used by the Outreach page (same table, but a
+ * click there opens the job's Emails / Replies instead of the job page).
  */
 import { Briefcase, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,8 +21,6 @@ import { useApi } from '../useApi';
 
 export function JobsPage() {
   const { data, error, loading } = useApi<{ jobs: Job[] }>('/jobs');
-  const navigate = useNavigate();
-  const deleteJob = useDeleteJob();
 
   return (
     <>
@@ -43,90 +44,105 @@ export function JobsPage() {
         </div>
       )}
 
-      {data && data.jobs.length > 0 && (
-        // The wrapper scrolls sideways on narrow screens instead of squashing the table.
-        <div className="card table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th scope="col">Job ID</th>
-                <th scope="col">Job</th>
-                <th scope="col">Location</th>
-                <th scope="col">Candidates</th>
-                <th scope="col">Contacted</th>
-                <th scope="col">Hired</th>
-                <th scope="col">AI tokens</th>
-                <th scope="col">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.jobs.map((job) => (
-                <tr
-                  key={job.id}
-                  className="row-link"
-                  // Keyboard users can Tab to the row and press Enter, like a link.
-                  tabIndex={0}
-                  aria-label={`Open ${job.title}`}
-                  onClick={() => navigate(`/jobs/${job.id}`)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') navigate(`/jobs/${job.id}`);
-                  }}
-                >
-                  <td className="job-code">{job.jobCode ?? '–'}</td>
-                  <td>
-                    <Link to={`/jobs/${job.id}`} className="table__title">
-                      {job.title}
-                    </Link>
-                    {/* Seniority and age under the title keep the table narrow enough to fit
+      {data && data.jobs.length > 0 && <JobsTable jobs={data.jobs} linkTo={(job) => `/jobs/${job.id}`} />}
+    </>
+  );
+}
+
+/**
+ * The jobs table (Job ID, title, location, candidates, contacted, hired, AI tokens, and
+ * Edit / Delete buttons). `linkTo` says where a click on a row goes:
+ *   Jobs page      -> /jobs/:id           (the job page)
+ *   Outreach page  -> /outreach/:id       (the job's Emails / Replies tabs)
+ */
+export function JobsTable({ jobs, linkTo }: { jobs: Job[]; linkTo: (job: Job) => string }) {
+  const navigate = useNavigate();
+  const deleteJob = useDeleteJob();
+
+  return (
+    <>
+      {/* The wrapper scrolls sideways on narrow screens instead of squashing the table. */}
+      <div className="card table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th scope="col">Job ID</th>
+              <th scope="col">Job</th>
+              <th scope="col">Location</th>
+              <th scope="col">Candidates</th>
+              <th scope="col">Contacted</th>
+              <th scope="col">Hired</th>
+              <th scope="col">AI tokens</th>
+              <th scope="col">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {jobs.map((job) => (
+              <tr
+                key={job.id}
+                className="row-link"
+                // Keyboard users can Tab to the row and press Enter, like a link.
+                tabIndex={0}
+                aria-label={`Open ${job.title}`}
+                onClick={() => navigate(linkTo(job))}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') navigate(linkTo(job));
+                }}
+              >
+                <td className="job-code">{job.jobCode ?? '–'}</td>
+                <td>
+                  <Link to={linkTo(job)} className="table__title">
+                    {job.title}
+                  </Link>
+                  {/* Seniority and age under the title keep the table narrow enough to fit
                         next to the chat. */}
-                    <div className="muted small">
-                      {orUnknown(job.seniority)} · {timeAgo(job.createdAt)}
-                    </div>
-                  </td>
-                  <td>
-                    {orUnknown(job.location)} · {remoteLabel(job.remotePolicy)}
-                  </td>
-                  <td>{job.totalCandidates}</td>
-                  <td>{job.totalCandidates - job.counts.sourced - job.counts.accepted - job.counts.rejected}</td>
-                  <td>{job.counts.hired}</td>
-                  <td title={tokenDetail(job.aiUsage)}>{tokens(job.aiUsage.inputTokens + job.aiUsage.outputTokens)}</td>
-                  <td className="row-actions">
-                    {/* stopPropagation: these buttons must not also open the job. */}
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label={`Edit ${job.title}`}
-                      title="Edit job"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        navigate(`/jobs/${job.id}/edit`);
-                      }}
-                      onKeyDown={(event) => event.stopPropagation()}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className="icon-button icon-button--danger"
-                      aria-label={`Delete ${job.title}`}
-                      title="Delete job"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        deleteJob.ask(job);
-                      }}
-                      onKeyDown={(event) => event.stopPropagation()}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                  <div className="muted small">
+                    {orUnknown(job.seniority)} · {timeAgo(job.createdAt)}
+                  </div>
+                </td>
+                <td>
+                  {orUnknown(job.location)} · {remoteLabel(job.remotePolicy)}
+                </td>
+                <td>{job.totalCandidates}</td>
+                <td>{job.totalCandidates - job.counts.sourced - job.counts.accepted - job.counts.rejected}</td>
+                <td>{job.counts.hired}</td>
+                <td title={tokenDetail(job.aiUsage)}>{tokens(job.aiUsage.inputTokens + job.aiUsage.outputTokens)}</td>
+                <td className="row-actions">
+                  {/* stopPropagation: these buttons must not also open the job. */}
+                  <button
+                    type="button"
+                    className="icon-button"
+                    aria-label={`Edit ${job.title}`}
+                    title="Edit job"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/jobs/${job.id}/edit`);
+                    }}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-button icon-button--danger"
+                    aria-label={`Delete ${job.title}`}
+                    title="Delete job"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      deleteJob.ask(job);
+                    }}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {deleteJob.dialog}
     </>
   );
